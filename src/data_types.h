@@ -5,6 +5,7 @@
 #define FDOUT stdout  
 #include <unistd.h> /*usleep*/
 #include<pthread.h> /* mutex_t */
+#include<stdio.h> /* mutex_t */
 #include <sys/socket.h>
 
 #define  UP     1   //  \e[1A
@@ -24,7 +25,6 @@ typedef struct {
 /* should be common to all players, global */
 typedef struct {
   int max_x, max_y;
-  FILE *errorlog;
   FILE *log;
   int t_inc;   // how much to increase the speed per pellot
   int port;   // port to listen on
@@ -43,6 +43,8 @@ typedef struct {
   int color;            /* techo snake tiam */
   useconds_t delay;
   pthread_mutex_t lock; /*lock for threading */
+  pthread_t tid_progress;
+  pthread_t tid_controll;
 
   int fd;               /* file descriptor for socket */
   struct sockaddr_in * addr; /* clients address */

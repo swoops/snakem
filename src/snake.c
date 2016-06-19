@@ -8,7 +8,7 @@
 #include "menu.h"
 #include "debug.h"
 #include "snake.h"
-
+#include  "player.h"
 
 void draw_snake(player *p){
   int i;
@@ -27,9 +27,9 @@ void change_dir(player *p, unsigned  int dir){
     if ( p->dir & (UP | DOWN ) && dir & (UP | DOWN )  ) return;
 
     /* TODO: unlock/lock wrapper to check for player==NULL */
-    pthread_mutex_lock(&p->lock);
+    player_lock(&p->lock);
     p->dir = dir | HOLDD;
-    pthread_mutex_unlock(&p->lock);
+    player_unlock(&p->lock);
 }
 
 int player_controll(player *p){
@@ -60,12 +60,12 @@ int player_controll(player *p){
         case ' ':
           /* to pause just lock until done */
           /* TODO: disable for two players */
-          pthread_mutex_lock(&p->lock);
+          player_lock(&p->lock);
 					debug(0, "\e[%dCPAUSED", (SERVER.max_x - 6)/2);
 					while(fgetc(stdin) != ' ')
 						usleep(1000);
 					debug(0, "\e[0m\e[2K");
-          pthread_mutex_unlock(&p->lock);
+          player_unlock(&p->lock);
 
           break;
     }
@@ -95,7 +95,7 @@ void grow_snake(player *p){
   p->score += 100;
   show_score(p->score);
   if ( p->size == p->slen )
-    winner();  // TODO: realloc memory so no one wins
+    winner();  // TODO: realloc memory so no one wins... ever...
   int i;
   for ( i=p->slen++; i >= p->head; i-- )
     p->pix[i+1] = p->pix[i];
@@ -122,7 +122,7 @@ void move_snake(player *p){
 
 
   // find new head
-  pthread_mutex_lock(&p->lock);
+  player_lock(&p->lock);
   // unset hold direction flag if there...
   if ( p->dir & HOLDD )
     p->dir = p->dir ^ HOLDD;  
@@ -140,7 +140,7 @@ void move_snake(player *p){
       phead.x = phead.x - 1;
       break;
   }
-  pthread_mutex_unlock(&p->lock);
+  player_unlock(&p->lock);
 
   // get new position of head
   head_num = cord_to_num(&phead);
