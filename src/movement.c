@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include "data_types.h"
 #include "movement.h"
+#include <sys/socket.h>
 
 void go_home_cursor(){
   fprintf(FDOUT, "\e[H");

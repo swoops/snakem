@@ -1,14 +1,20 @@
 #ifndef  data_check
 #define data_check
+/* for the size of sprintf stuff */
+#define MAX_BUFF_SIZE 1024
 #define FDOUT stdout  
 #include <unistd.h> /*usleep*/
 #include<pthread.h> /* mutex_t */
+#include <sys/socket.h>
 
 #define  UP     1   //  \e[1A
 #define  DOWN   2   //  \e[1B
 #define  RIGHT  4   //  \e[1C
 #define  LEFT   8   //  \e[1D
 #define  HOLDD  16  //  \e[1D
+
+#define CLEAR_SCREEN "\e[2J"
+
 
 
 typedef struct {
@@ -22,6 +28,7 @@ typedef struct {
   FILE *log;
   int t_inc;   // how much to increase the speed per pellot
   int port;   // port to listen on
+  struct sockaddr_in * addr;
 } server;
 
 /* everying in here is unique to each playser */
@@ -36,6 +43,9 @@ typedef struct {
   int color;            /* techo snake tiam */
   useconds_t delay;
   pthread_mutex_t lock; /*lock for threading */
+
+  int fd;               /* file descriptor for socket */
+  struct sockaddr_in * addr; /* clients address */
 } player;
 
 

@@ -7,10 +7,14 @@ void grow_snake(player *p);
 */
 int progess_game(player *p);
 /*
- * thread for user to control snake direction
+ * thread for user to control snake direction 
 */
 int player_controll(player *p);
 /* 
  * put snake on board the first time
 */
 void draw_snake(player *p);
+/*
+ * simpler way to change direction, takes care of lock for you
+*/
+void change_dir(player *p, unsigned  int dir);

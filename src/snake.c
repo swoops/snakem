@@ -20,48 +20,60 @@ void draw_snake(player *p){
     place_str(pos.x, pos.y, "s");
   }
 }
+
+void change_dir(player *p, unsigned  int dir){
+    if ( p->dir & HOLDD ) return;
+    if ( p->dir & (LEFT | RIGHT ) && dir & (LEFT | RIGHT )  ) return;
+    if ( p->dir & (UP | DOWN ) && dir & (UP | DOWN )  ) return;
+
+    /* TODO: unlock/lock wrapper to check for player==NULL */
+    pthread_mutex_lock(&p->lock);
+    p->dir = dir | HOLDD;
+    pthread_mutex_unlock(&p->lock);
+}
+
 int player_controll(player *p){
   char ch;
-  while((ch = fgetc(stdin)) != 'q' ){    /* read the file till we reach the end */
-    if ( p->dir & HOLDD )
-      continue;
+
+  while(1){
+    /* get character */
+    read(p->fd, &ch, 1);
+    if ( ch == 'q' ) break;
+
     switch(ch){
         case 'l':
-          if ( p->dir == LEFT || p->dir == RIGHT ) break;
-          pthread_mutex_lock(&p->lock);
-          p->dir = RIGHT | HOLDD;
-          pthread_mutex_unlock(&p->lock);
+        case 'd':
+          change_dir(p, RIGHT);
           break;
         case 'h':
-          if ( p->dir == LEFT || p->dir == RIGHT ) break;
-          pthread_mutex_lock(&p->lock);
-          p->dir = LEFT | HOLDD;
-          pthread_mutex_unlock(&p->lock);
+        case 'a':
+          change_dir(p, LEFT);
           break;
         case 'k':
-          if ( p->dir == DOWN || p->dir == UP ) break;
-          pthread_mutex_lock(&p->lock);
-          p->dir = UP | HOLDD;
-          pthread_mutex_unlock(&p->lock);
+        case 'w':
+          change_dir(p, UP);
           break;
         case 'j':
-          if ( p->dir == DOWN || p->dir == UP ) break;
-          pthread_mutex_lock(&p->lock);
-          p->dir = DOWN | HOLDD;
-          pthread_mutex_unlock(&p->lock);
+        case 's':
+          change_dir(p, DOWN);
           break;
         case ' ':
+          /* to pause just lock until done */
+          /* TODO: disable for two players */
           pthread_mutex_lock(&p->lock);
 					debug(0, "\e[%dCPAUSED", (SERVER.max_x - 6)/2);
 					while(fgetc(stdin) != ' ')
 						usleep(1000);
 					debug(0, "\e[0m\e[2K");
-
           pthread_mutex_unlock(&p->lock);
+
           break;
     }
   }
-  fprintf(FDOUT, "\e[2J");
+  if ( p->fd )
+    write(p->fd, CLEAR_SCREEN, sizeof(CLEAR_SCREEN));
+  else
+    printf(CLEAR_SCREEN);
   go_home_cursor();
   return 0;
 
