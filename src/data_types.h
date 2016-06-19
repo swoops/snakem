@@ -21,6 +21,7 @@ typedef struct {
   FILE *errorlog;
   FILE *log;
   int t_inc;   // how much to increase the speed per pellot
+  int port;   // port to listen on
 } server;
 
 /* everying in here is unique to each playser */

@@ -3,8 +3,38 @@
 #include<pthread.h>
 #include "snake.h"
 #include "data_types.h"
+#include <sys/socket.h> 
 #include "menu.h"  /*draw_board()*/
 #include <unistd.h> /*get opt*/
+
+void error(char *msg){
+  fprintf(stderr, "%s", msg);
+}
+
+player * init_player(){
+  player *play = (player * ) malloc(sizeof(player));
+  if ( play == NULL ){
+    error("could not make player\n");
+    exit(1);
+  }
+
+  play->color = 0;
+  play->score = 0;
+  play->size = 100;
+  play->pix  =  malloc(sizeof(int) * play->size);
+  if ( play->pix == NULL ){
+    error("could not get space for snake pix\n");
+    exit(1);
+  }
+  play->slen = 3;
+  int i;
+  for (i=play->slen; i>0; i--)
+    play->pix[play->slen-i] = i;
+  play->dir = RIGHT;
+  play->head = 0;
+
+  return play;
+}
 
 void help_menu(char *p, int x){
   fprintf(stderr, "%s: [-x <width> ] [ -y <height> ] \n\n", p);
@@ -23,6 +53,7 @@ int main(int argc, char *argv[]){
   int ch;
   SERVER.max_y = 0;
   SERVER.max_x = 0;
+  SERVER.port = 4444;
   SERVER.t_inc = 1000;
   SERVER.errorlog = stderr;
   SERVER.log = NULL;
@@ -50,6 +81,9 @@ int main(int argc, char *argv[]){
           fprintf(stderr, "[!] -x not in range\n");
           help_menu(argv[0], 1);
         }
+        break;
+      case 'p':
+        SERVER.port = atoi(optarg);
         break;
       case 'y':
         SERVER.max_y = atoi(optarg);
@@ -79,30 +113,19 @@ int main(int argc, char *argv[]){
   draw_board();
 
   /* make snake */
-  player play;
-  play.color = 0;
-  play.score = 0;
-  play.size = 100;
-  int a[play.size];
-  play.slen = 3;
-  int i;
-  for (i=play.slen; i>0; i--)
-    a[play.slen-i] = i;
-  play.pix = a;
-  play.dir = RIGHT;
-  play.head = 0;
+  player *play = init_player();
 
-  if (pthread_mutex_init(&play.lock, NULL) != 0) {
+  if (pthread_mutex_init(&play->lock, NULL) != 0) {
       fprintf(FDOUT,"\n mutex init failed\n");
       return 1;
   }
 
   pthread_t tid;
-  if ( pthread_create(&tid, NULL, (void *) &progess_game, &play) != 0 ){
+  if ( pthread_create(&tid, NULL, (void *) &progess_game, play) != 0 ){
       fprintf(FDOUT,"\n swoopsed it all\n");
       exit(0);
   }
 
-  player_controll(&play);
+  player_controll(play);
   return 0;
 }
