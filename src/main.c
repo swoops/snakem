@@ -9,6 +9,7 @@
 #include <arpa/inet.h> /*htons*/
 #include  <sys/socket.h>
 #include  "player.h"
+#include  "logging.h"
 
 
 void help_menu(char *p, int x){
@@ -96,16 +97,17 @@ int main(int argc, char *argv[]){
         return 1;
     }
 
-    if ( pthread_create(&player->tid_progress, NULL, (void *) &progess_game, play) != 0 )
+    if ( pthread_create(&play->tid_progress, NULL, (void *) &progess_game, play) != 0 )
         fatal("\n swoopsed it all progress\n");
 
 
-    if ( pthread_create(&player->tid_controll, NULL, (void *) &player_controll, play) != 0 )
-        fatal("\n swoopsed it all controll\n");
+    player_controll(play);
+    /* if ( pthread_create(&play->tid_controll, NULL, (void *) &player_controll, play) != 0 ) */
+    /*     fatal("\n swoopsed it all controll\n"); */
 
-    sleep(100); /* TODO:!!!!! fix this, this is soooo stupid */
+    /* pthread_join(play->tid_controll, NULL); */
+    /* pthread_join(play->tid_progress, NULL); */
     fprintf(FDOUT, "\e[2J");
-    destory_player(play);
   }else{
     /*
     ** SERVER MODE!!!! **
@@ -150,13 +152,13 @@ int main(int argc, char *argv[]){
           return 1;
       }
 
-      if ( pthread_create(&player->tid_progress, NULL, (void *) &progess_game, play) != 0 )
+      if ( pthread_create(&play->tid_progress, NULL, (void *) &progess_game, play) != 0 )
           fatal("\n swoopsed it all progress\n");
 
       fprintf(FDOUT, "\e[2J");
       draw_board();
 
-      if ( pthread_create(&player->tid_controll, NULL, (void *) &player_controll, play) != 0 )
+      if ( pthread_create(&play->tid_controll, NULL, (void *) &player_controll, play) != 0 )
           fatal("\n swoopsed it all controll\n");
     }
 

@@ -1,6 +1,6 @@
 CC = gcc
 
-CFLAGS = -Wall
+CFLAGS = -g -Wall
 
 LIBRARIES = pthread
 TARGET = snakem
@@ -8,19 +8,22 @@ TARGET = snakem
 all: $(TARGET)
 
 $(TARGET): movement.o menu.o snake.o  main.c 
-	$(CC) -g $(CFLAGS) -l $(LIBRARIES) player.o movement.o menu.o snake.o -o ../$(TARGET) main.c
+	$(CC) $(CFLAGS) -l $(LIBRARIES) logging.o player.o movement.o menu.o snake.o -o ../$(TARGET) main.c
 
 movement.o: movement.c 
-	$(CC) -c movement.c 
+	$(CC) $(CFALGS) -c movement.c 
 
-player.o:  player.c menu.o 
-	$(CC) -c player.c 
+logging.o: logging.c 
+	$(CC) $(CFALGS) -c logging.c 
 
-menu.o:  menu.c movement.o
-	$(CC) -c menu.c 
+player.o:  player.c logging.o 
+	$(CC) $(CFLAGS) -c player.c 
 
-snake.o:  snake.c menu.o movement.o debug.h player.o
-	$(CC) -c snake.c 
+menu.o:  menu.c movement.o player.o
+	$(CC) $(CFALGS) -c menu.c 
+
+snake.o:  snake.c menu.o movement.o debug.h player.o logging.o
+	$(CC) $(CFALGS) -c snake.c 
 
 # install: $(TARGET)
 # 	install -o root -g root -m 755 $(TARGET) /opt/$(TARGET)

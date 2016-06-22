@@ -9,6 +9,8 @@
 #include "debug.h"
 #include "snake.h"
 #include  "player.h"
+#include  "logging.h"
+
 
 void draw_snake(player *p){
   int i;
@@ -26,10 +28,9 @@ void change_dir(player *p, unsigned  int dir){
     if ( p->dir & (LEFT | RIGHT ) && dir & (LEFT | RIGHT )  ) return;
     if ( p->dir & (UP | DOWN ) && dir & (UP | DOWN )  ) return;
 
-    /* TODO: unlock/lock wrapper to check for player==NULL */
-    player_lock(&p->lock);
+    player_lock(p);
     p->dir = dir | HOLDD;
-    player_unlock(&p->lock);
+    player_unlock(p);
 }
 
 int player_controll(player *p){
@@ -60,13 +61,12 @@ int player_controll(player *p){
         case ' ':
           /* to pause just lock until done */
           /* TODO: disable for two players */
-          player_lock(&p->lock);
+          player_lock(p);
 					debug(0, "\e[%dCPAUSED", (SERVER.max_x - 6)/2);
 					while(fgetc(stdin) != ' ')
 						usleep(1000);
 					debug(0, "\e[0m\e[2K");
-          player_unlock(&p->lock);
-
+          player_unlock(p);
           break;
     }
   }
@@ -75,6 +75,9 @@ int player_controll(player *p){
   else
     printf(CLEAR_SCREEN);
   go_home_cursor();
+  if ( SERVER.log )
+    server_log("got a quite from player, snake is dead?: %d\n", p->flags);
+  destroy_player(p);
   return 0;
 
 }
@@ -94,8 +97,10 @@ int progess_game(player *p){
 void grow_snake(player *p){
   p->score += 100;
   show_score(p->score);
-  if ( p->size == p->slen )
+  if ( p->size == p->slen ){
     winner();  // TODO: realloc memory so no one wins... ever...
+    destroy_player(p);
+  }
   int i;
   for ( i=p->slen++; i >= p->head; i-- )
     p->pix[i+1] = p->pix[i];
@@ -122,7 +127,7 @@ void move_snake(player *p){
 
 
   // find new head
-  player_lock(&p->lock);
+  player_lock(p);
   // unset hold direction flag if there...
   if ( p->dir & HOLDD )
     p->dir = p->dir ^ HOLDD;  
@@ -140,13 +145,16 @@ void move_snake(player *p){
       phead.x = phead.x - 1;
       break;
   }
-  player_unlock(&p->lock);
+  player_unlock(p);
 
   // get new position of head
   head_num = cord_to_num(&phead);
 
   // hit wall?
-  if ( !head_num ) game_over();
+  if ( !head_num ) {
+    game_over();
+    destroy_player(p);
+  }
 
 
   /*
@@ -156,8 +164,10 @@ void move_snake(player *p){
     /* check hit tail */
     int i;
     for ( i=1; i<p->slen; i++ )
-      if ( p->pix[i] == head_num )
+      if ( p->pix[i] == head_num ){
         game_over();
+        destroy_player(p);
+      }
 
     /* collisions done, remove old tail because no pellot */
     place_str( ptail.x, ptail.y, "\e[48;5;%dm \e[0m", p->color);

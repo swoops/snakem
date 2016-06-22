@@ -16,6 +16,10 @@
 
 #define CLEAR_SCREEN "\e[2J"
 
+/* for snake flags */
+#define DEAD 1    /* snake is dead, clean him off the road */
+#define TECHNO_TIAM 2  /*turn techno mode on/off*/
+
 
 
 typedef struct {
@@ -41,6 +45,7 @@ typedef struct {
   unsigned int score;   /* what do you think it is */
   int pellet;           /* location of pellet*/
   int color;            /* techo snake tiam */
+  int flags;            /* sanke attributes */
   useconds_t delay;
   pthread_mutex_t lock; /*lock for threading */
   pthread_t tid_progress;

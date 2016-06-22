@@ -1,46 +1,65 @@
-#include<pthread.h>
+#include <pthread.h>
+#include <stdlib.h> /*malloc*/
+#include <sys/socket.h> /*inet_ntoa*/
+#include <netinet/in.h> /*inet_ntoa*/
+#include <arpa/inet.h> /*inet_ntoa*/
 #include  "data_types.h"
-#include  "menu.h"
+#include  "player.h"
+#include "logging.h"
 
 void player_unlock(player *p){
   /* should not unlock a player that is NULL? */
-  if (p->pix == NULL) fatal("unlocking null player")
+  if (p->flags & DEAD) fatal("unlocking a dead snake");
 
   pthread_mutex_unlock(&p->lock);
 
 }
 void player_lock(player *p){
-  if (p->pix == NULL) /* someone killed the player already */
-    pthread_exit(0);
+  if (p->flags & DEAD) /* IT'S DEAD!.. WILL!!! */
+    destroy_player(p);
 
   pthread_mutex_lock(&p->lock);
 }
 
-void destory_player(player *p){
+void destroy_player(player *p){
   /*
-   * cleans up the player struct...  nicely?
-   * save current player pix pointer locally and set the one everyone knows to
-   * NULL, lock/unlock wrappers should catch the NULL reference and this should
-   * stop race conditions
+   * called twice, per snake to exit, once per each thread first call marks
+   * snake as dead, second call cleans up the mess
   */
 
+  if (SERVER.log) server_log("In destroy_player: snake is dead?: %d\n", p->flags);
+  if (SERVER.log) server_log("p->flags & DEAD == %d\n", (p->flags & DEAD));
 
-  player * op = p;
-  *p = NULL; 
+  /* snake is alive, kill it and exit thread */
+  if ( ( p->flags & DEAD ) == 0 ){
+    if (SERVER.log) server_log("in if statment: snake is dead?: %d\n", p->flags);
+    pthread_mutex_lock(&p->lock);
+    p->flags |= DEAD;
+    pthread_mutex_unlock(&p->lock);
+    if (SERVER.log) server_log("first thread exiting\n");
+    pthread_exit(0);
+    return;
+  }
 
-  pthread_mutex_destroy(&op->lock);
+  /* snake is dead...
+   * you are the only one who remembers him
+   * clean him up and exit
+   * it is what he would of wanted.
+   * at least he won't be in our memory
+  */
 
-  if ( play->fd ){
-    close(play->fd);
-    if (SERVER.log){
-      server_log("Player %s:%d scored %d\n", inet_ntoa(p->addr->sin_addr), ntohs(op->addr->sin_port), op->score);
-    }
+  pthread_mutex_destroy(&p->lock);
+
+  if ( p->fd ){
+    close(p->fd);
+    if (SERVER.log) server_log("Player %s:%d scored %d\n", inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), p->score);
   }
 
   free(p->pix);
   free(p);
-  p = NULL;
-  return 0;
+
+  if (SERVER.log) server_log("snake is completely cleaned up\n");
+  pthread_exit(0);
 }
 
 player * init_player(){
@@ -50,6 +69,7 @@ player * init_player(){
   play->color = 0;
   play->score = 0;
   play->size = 100;
+  play->flags = 0;
   play->fd = 0;  /* assume stdin */
   play->pix  =  malloc(sizeof(int) * play->size);
   if ( play->pix == NULL ){
