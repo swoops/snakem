@@ -11,8 +11,13 @@ void debug(int flags, char *fmt, ...) {
   fprintf(FDOUT, "\e[H\e[%dB\e[2K\e[48;5;88;38;5;0m", SERVER.max_y+2);
   va_end(ap);
   vfprintf(FDOUT, fmt, ap);
+
+  /* not reliable now that server is implemented */
+  /* 
   if ( flags & DEBUG_PAUSE )
     getchar();
+  */
+
   if ( flags & DEBUG_SLEEP )
     sleep(5);
 

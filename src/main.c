@@ -18,6 +18,7 @@ void help_menu(char *p, int x){
   fprintf(stderr, "\t-y: \ttotal height of board (default: width)\n");
   fprintf(stderr, "\t-l: \tlog file\n");
   fprintf(stderr, "\t-i: \tspeed increase for pellots (default 1000)\n");
+  fprintf(stderr, "\t-s: \tHigh Score to start with... better logging later :)\n");
   fprintf(stderr, "\n");
   exit(x);
 }
@@ -27,13 +28,14 @@ void help_menu(char *p, int x){
 int main(int argc, char *argv[]){
   /* TODO: put this junk in a function in another file */
   int ch;
-  SERVER.max_y = 0;
-  SERVER.max_x = 0;
-  SERVER.port = 0;
-  SERVER.t_inc = 1000;
-  SERVER.log = stderr;
+  SERVER.max_y       =  0;
+  SERVER.max_x       =  0;
+  SERVER.port        =  0;
+  SERVER.high_score  =  0;
+  SERVER.t_inc       =  1000;
+  SERVER.log         =  stderr;
 
-  while ((ch = getopt (argc, argv, "hp:x:y:i:e:l:")) != -1){
+  while ((ch = getopt (argc, argv, "hp:x:y:i:e:l:s:")) != -1){
     switch (ch) {
       case 'h':
         help_menu(argv[0], 0);
@@ -44,6 +46,9 @@ int main(int argc, char *argv[]){
         break;
       case 'p':
         SERVER.port = atoi(optarg);
+        break;
+      case 's':
+        SERVER.high_score = atoi(optarg);
         break;
       case 'l':
         if ( ( SERVER.log = fopen(optarg, "a") ) == NULL )
@@ -101,12 +106,11 @@ int main(int argc, char *argv[]){
         fatal("\n swoopsed it all progress\n");
 
 
-    player_controll(play);
-    /* if ( pthread_create(&play->tid_controll, NULL, (void *) &player_controll, play) != 0 ) */
-    /*     fatal("\n swoopsed it all controll\n"); */
+    if ( pthread_create(&play->tid_controll, NULL, (void *) &player_controll, play) != 0 )
+        fatal("\n swoopsed it all controll\n");
 
-    /* pthread_join(play->tid_controll, NULL); */
-    /* pthread_join(play->tid_progress, NULL); */
+    pthread_join(play->tid_controll, NULL);
+    pthread_join(play->tid_progress, NULL);
     fprintf(FDOUT, "\e[2J");
   }else{
     /*

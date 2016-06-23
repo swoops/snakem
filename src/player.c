@@ -14,6 +14,13 @@ void player_unlock(player *p){
   pthread_mutex_unlock(&p->lock);
 
 }
+
+char pgetc(player *p){
+    char ch;
+    read(p->fd, &ch, 1);
+    return ch;
+}
+
 void player_lock(player *p){
   if (p->flags & DEAD) /* IT'S DEAD!.. WILL!!! */
     destroy_player(p);
@@ -27,16 +34,16 @@ void destroy_player(player *p){
    * snake as dead, second call cleans up the mess
   */
 
-  if (SERVER.log) server_log("In destroy_player: snake is dead?: %d\n", p->flags);
-  if (SERVER.log) server_log("p->flags & DEAD == %d\n", (p->flags & DEAD));
 
   /* snake is alive, kill it and exit thread */
   if ( ( p->flags & DEAD ) == 0 ){
-    if (SERVER.log) server_log("in if statment: snake is dead?: %d\n", p->flags);
     pthread_mutex_lock(&p->lock);
     p->flags |= DEAD;
     pthread_mutex_unlock(&p->lock);
-    if (SERVER.log) server_log("first thread exiting\n");
+
+    if ( p->fd )
+      server_log("Player %s:%d first thread exiting\n", inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port));
+
     pthread_exit(0);
     return;
   }
@@ -51,16 +58,32 @@ void destroy_player(player *p){
   pthread_mutex_destroy(&p->lock);
 
   if ( p->fd ){
+    server_log("Player %s:%d scored %d\n", inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), p->score);
     close(p->fd);
-    if (SERVER.log) server_log("Player %s:%d scored %d\n", inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), p->score);
+  }else if ( SERVER.log != stderr  ){
+    server_log("local Player scored %d\n", p->score);
+  }
+
+  /* high score check */
+  if ( ( SERVER.high_score || p->fd ) && p->score > SERVER.high_score ){
+    SERVER.high_score = p->score;
+    if ( p->fd ){
+      server_log("!!!NEW HIGH SCORE!!! Player %s:%d scored %d\n", inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), p->score);
+      close(p->fd);
+    }else if ( SERVER.log != stderr  ){
+      server_log("!!!NEW HIGH SCORE!!!  local Player scored %d\n", p->score);
+    }
   }
 
   free(p->pix);
   free(p);
 
-  if (SERVER.log) server_log("snake is completely cleaned up\n");
+  if ( SERVER.log != stderr  )
+    server_log("snake is completely cleaned up\n");
+
   pthread_exit(0);
 }
+
 
 player * init_player(){
   player *play = (player * ) malloc(sizeof(player));

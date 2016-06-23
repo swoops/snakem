@@ -36,11 +36,7 @@ void change_dir(player *p, unsigned  int dir){
 int player_controll(player *p){
   char ch;
 
-  while(1){
-    /* get character */
-    read(p->fd, &ch, 1);
-    if ( ch == 'q' ) break;
-
+  while((ch = pgetc(p)) != 'q' ){
     switch(ch){
         case 'l':
         case 'd':
@@ -63,7 +59,7 @@ int player_controll(player *p){
           /* TODO: disable for two players */
           player_lock(p);
 					debug(0, "\e[%dCPAUSED", (SERVER.max_x - 6)/2);
-					while(fgetc(stdin) != ' ')
+					while(pgetc(p) != ' ')
 						usleep(1000);
 					debug(0, "\e[0m\e[2K");
           player_unlock(p);
@@ -90,6 +86,7 @@ int progess_game(player *p){
   while(1){
     usleep(p->delay);
     move_snake(p);
+    /* if (SERVER.port == 0 ) fflush(FDOUT); */
     fflush(FDOUT);
   }
 }

@@ -32,6 +32,7 @@ typedef struct {
   FILE *log;
   int t_inc;   // how much to increase the speed per pellot
   int port;   // port to listen on
+  int high_score;
   struct sockaddr_in * addr;
 } server;
 

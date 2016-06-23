@@ -17,7 +17,7 @@ void game_over(){
 
   for ( i=0; i<3; i++ ){
     place_str( x, y++, "%s", str);
-    fflush(FDOUT);
+		if (SERVER.port == 0) fflush(FDOUT);
     usleep(500000);
   }
   fprintf(FDOUT, "\e[2J");
@@ -33,11 +33,10 @@ void winner(){
 
   for ( i=0; i<3; i++ ){
     place_str( x, y++, "%s", str);
-    fflush(FDOUT);
+    if ( SERVER.port == 0  ) fflush(FDOUT);
     usleep(500000);
   }
 
-  fgetc(stdin);
   fprintf(FDOUT, "\e[2J");
   go_home_cursor();
 }
