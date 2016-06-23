@@ -63,12 +63,12 @@ int player_controll(player *p){
 					server_log("\e[0m\e[2K");
           player_unlock(p);
           break;
+        default:
+          player_lock(p);
+          player_unlock(p);
     }
   }
   player_write(p, CLEAR_SCREEN);
-  go_home_cursor(p);
-  if ( SERVER.log )
-    server_log("got a quite from player, snake is dead?: %d\n", p->flags);
   destroy_player(p);
   return 0;
 
@@ -76,7 +76,19 @@ int player_controll(player *p){
 
 int progess_game(player *p){
   p->delay =  100000; 
+
+  /* 
+   * tell tellnet not to write characters to the screen, send every keypress,
+   * and don't be such a jerk... thanks SO:
+   * https://stackoverflow.com/questions/4532344/send-data-over-telnet-without-pressing-enter
+  */
+  player_write(p, 
+    "\xff\xfd\x22" /* IAC DO LINEMODE*/
+    "\xff\xfb\x01" /* IAC WILL ECHO */
+  ); 
+
   player_write(p,CLEAR_SCREEN); /*clear screen*/
+
   draw_board(p);
   draw_snake(p);
   put_pellet(p);
