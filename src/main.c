@@ -3,7 +3,6 @@
 #include  <pthread.h>
 #include  "snake.h"
 #include  "data_types.h"
-#include  "menu.h"        /*draw_board()*/
 #include  <unistd.h>      /*getopt*/
 #include  <strings.h>     /*bzero*/
 #include <arpa/inet.h> /*htons*/
@@ -90,17 +89,11 @@ int main(int argc, char *argv[]){
 
   /* playing locally... I am so lonely... */
   if ( SERVER.port == 0 ){
-    /* clear screen */
-    fprintf(FDOUT, "\e[2J");
-    draw_board();
-
     /* make snake */
     player *play = init_player();
 
-    if (pthread_mutex_init(&play->lock, NULL) != 0) {
-        fprintf(FDOUT,"\n mutex init failed\n");
-        return 1;
-    }
+    if (pthread_mutex_init(&play->lock, NULL) != 0) 
+        fatal("\n mutex init failed\n");
 
     if ( pthread_create(&play->tid_progress, NULL, (void *) &progess_game, play) != 0 )
         fatal("\n swoopsed it all progress\n");
@@ -151,16 +144,11 @@ int main(int argc, char *argv[]){
       play->fd = new_sockfd;
       play->addr = &client_addr;
 
-      if (pthread_mutex_init(&play->lock, NULL) != 0) {
-          fprintf(FDOUT,"\n mutex init failed\n");
-          return 1;
-      }
+      if (pthread_mutex_init(&play->lock, NULL) != 0) 
+          fatal(" mutex init failed\n");
 
       if ( pthread_create(&play->tid_progress, NULL, (void *) &progess_game, play) != 0 )
           fatal("\n swoopsed it all progress\n");
-
-      fprintf(FDOUT, "\e[2J");
-      draw_board();
 
       if ( pthread_create(&play->tid_controll, NULL, (void *) &player_controll, play) != 0 )
           fatal("\n swoopsed it all controll\n");

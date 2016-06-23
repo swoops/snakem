@@ -6,7 +6,6 @@
 #include "data_types.h"
 #include "movement.h"
 #include "menu.h"
-#include "debug.h"
 #include "snake.h"
 #include  "player.h"
 #include  "logging.h"
@@ -18,8 +17,8 @@ void draw_snake(player *p){
 
   for ( i=0; i<p->slen; i++){
     if ( num_to_cord(p->pix[i], &pos) != 1)
-      debug(DEBUG_PAUSE, "[draw_snake]: num_to_cord(%d, head) != 1", p->pix[i]);
-    place_str(pos.x, pos.y, "s");
+      server_log("[draw_snake]: num_to_cord(%d, head) != 1", p->pix[i]);
+    place_str(pos.x, pos.y, p, "s");
   }
 }
 
@@ -58,19 +57,16 @@ int player_controll(player *p){
           /* to pause just lock until done */
           /* TODO: disable for two players */
           player_lock(p);
-					debug(0, "\e[%dCPAUSED", (SERVER.max_x - 6)/2);
+					server_log("\e[%dCPAUSED", (SERVER.max_x - 6)/2);
 					while(pgetc(p) != ' ')
 						usleep(1000);
-					debug(0, "\e[0m\e[2K");
+					server_log("\e[0m\e[2K");
           player_unlock(p);
           break;
     }
   }
-  if ( p->fd )
-    write(p->fd, CLEAR_SCREEN, sizeof(CLEAR_SCREEN));
-  else
-    printf(CLEAR_SCREEN);
-  go_home_cursor();
+  player_write(p, CLEAR_SCREEN);
+  go_home_cursor(p);
   if ( SERVER.log )
     server_log("got a quite from player, snake is dead?: %d\n", p->flags);
   destroy_player(p);
@@ -80,22 +76,23 @@ int player_controll(player *p){
 
 int progess_game(player *p){
   p->delay =  100000; 
+  player_write(p,CLEAR_SCREEN); /*clear screen*/
+  draw_board(p);
   draw_snake(p);
   put_pellet(p);
-  show_score(p->score);
+  show_score(p);
   while(1){
     usleep(p->delay);
     move_snake(p);
-    /* if (SERVER.port == 0 ) fflush(FDOUT); */
-    fflush(FDOUT);
+    if (SERVER.port == 0 ) fflush(FDOUT);
   }
 }
 
 void grow_snake(player *p){
   p->score += 100;
-  show_score(p->score);
+  show_score(p);
   if ( p->size == p->slen ){
-    winner();  // TODO: realloc memory so no one wins... ever...
+    winner(p);  // TODO: realloc memory so no one wins... ever...
     destroy_player(p);
   }
   int i;
@@ -117,10 +114,10 @@ void move_snake(player *p){
   if ( taili < 0 ) taili = taili + p->slen;
 
   if (  num_to_cord(p->pix[p->head], &phead) != 1 )
-    debug(DEBUG_PAUSE, "[move_snake]: num_to_cord(%d, head) != 1", p->pix[p->head]);
+    server_log("[move_snake]: num_to_cord(%d, head) != 1", p->pix[p->head]);
 
   if (  num_to_cord(p->pix[taili], &ptail) != 1 )
-    debug(DEBUG_PAUSE, "[move_snake]: num_to_cord(%d, head) != 1", p->pix[taili]);
+    server_log("[move_snake]: num_to_cord(%d, head) != 1", p->pix[taili]);
 
 
   // find new head
@@ -149,7 +146,7 @@ void move_snake(player *p){
 
   // hit wall?
   if ( !head_num ) {
-    game_over();
+    game_over(p);
     destroy_player(p);
   }
 
@@ -162,14 +159,12 @@ void move_snake(player *p){
     int i;
     for ( i=1; i<p->slen; i++ )
       if ( p->pix[i] == head_num ){
-        game_over();
+        game_over(p);
         destroy_player(p);
       }
 
     /* collisions done, remove old tail because no pellot */
-    place_str( ptail.x, ptail.y, "\e[48;5;%dm \e[0m", p->color);
-    /* place_str( ptail.x, ptail.y, " "); */
-
+    place_str( ptail.x, ptail.y, p,  "\e[48;5;%dm \e[0m", p->color);
   }else{
     grow_snake(p);
     put_pellet(p);
@@ -177,13 +172,11 @@ void move_snake(player *p){
     if ( taili < 0 ) taili = taili + p->slen;
   }
 
-  place_str( phead.x, phead.y, "S");
-  /* place_str( phead.x, phead.y, "\e[48;5;%dm$\e[0m", ( p->color+5 ) % 256); */
+  place_str( phead.x, phead.y, p, "S");
 
   /* update memory struct */
   p->head = taili;
   p->pix[p->head] =  head_num;
-  /* debug(0, "[move_snake]  head (%d, %d): %d", phead.x, phead.y, p->pix[p->head]); */
 
 }
 void put_pellet(player *p){
@@ -194,9 +187,8 @@ void put_pellet(player *p){
   int num = random() % ( ( SERVER.max_y-4 ) * (SERVER.max_x-5 ) );
 
   if ( num_to_cord(num, &pellet)  == 0 ){
-    debug(DEBUG_PAUSE, "[put_pellet]: pellet out of bounds (%d, %d): %d", pellet.x, pellet.y, num);
+    server_log("[put_pellet]: pellet out of bounds (%d, %d): %d", pellet.x, pellet.y, num);
   }
   p->pellet = num;
-  place_str( pellet.x, pellet.y, "\e[38;5;0;48;5;46m*\e[0m");
-  /* place_str( pellet.x, pellet.y, "\e[38;5;46m*\e[0m"); */
+  place_str( pellet.x, pellet.y, p, "\e[38;5;0;48;5;46m*\e[0m");
 }

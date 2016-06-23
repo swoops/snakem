@@ -4,14 +4,17 @@
 #include <stdarg.h>
 #include "data_types.h"
 #include "movement.h"
+#include "player.h"
 #include <sys/socket.h>
 
-void go_home_cursor(){
-  fprintf(FDOUT, "\e[H");
+void go_home_cursor(player *p){
+  player_write(p, "\e[H");
 }
 
 // 0,0 is home... or should it be?
-void move_cursor_abs(int x, int y){
+void move_cursor_abs(int x, int y, player *p){
+  char buff[40]; /* should not need more then that */
+  int len;
   x = check_bounds(x, SERVER.max_x, 0);
   y = check_bounds(y, SERVER.max_y, 0);
 
@@ -19,21 +22,28 @@ void move_cursor_abs(int x, int y){
    * go home 0,0 then move down and right x,y would be better to move relative
    * to current location but swoops that for now...
   */
-  go_home_cursor();
-  if ( x > 0 )
-    fprintf(FDOUT, "\e[%dC", x);
-  if ( y > 0 )
-    fprintf(FDOUT, "\e[%dB", y);
+  go_home_cursor(p);
+  if ( x > 0 && y > 0 )
+    snprintf(buff, sizeof(buff), "\e[%dC\e[%dB", x, y);
+  else if ( x > 0 )
+    snprintf(buff, sizeof(buff), "\e[%dC", x);
+  else if ( y > 0 )
+    snprintf(buff, sizeof(buff),"\e[%dB", y);
+
+  player_write(p, buff);
 }
 
-void place_str(int x, int y, char *fmt, ...) {
-  move_cursor_abs(x,y);
+void place_str(int x, int y, player *p, char *fmt, ...) {
+  char buff[MAX_BUFF_SIZE];
+  move_cursor_abs(x,y,p);
   va_list ap;
   va_start(ap, fmt);
-  vfprintf(FDOUT, fmt, ap);
+  vsnprintf(buff, sizeof(buff), fmt, ap);
   va_end(ap);
-  go_home_cursor();
+  player_write(p, buff);
+  go_home_cursor(p);
 }
+
 int check_bounds(int n, int max, int min){
   if ( n <= min )
     return min;

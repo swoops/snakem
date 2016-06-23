@@ -1,9 +1,9 @@
-void show_score(unsigned int score);
-void game_over();
-void winner();
+void show_score(player *p);
+void game_over(player *p);
+void winner(player *p);
 
 
 /*
  * draws borders without overwriting anything between
 */
-void draw_board();
+void draw_board(player *p);

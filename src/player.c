@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <string.h> /*strlen*/
 #include <stdlib.h> /*malloc*/
 #include <sys/socket.h> /*inet_ntoa*/
 #include <netinet/in.h> /*inet_ntoa*/
@@ -13,6 +14,14 @@ void player_unlock(player *p){
 
   pthread_mutex_unlock(&p->lock);
 
+}
+
+void player_write(player *p, char *buff){
+  if (p->fd != 0){
+    write(p->fd, buff, strlen(buff));
+  }else{
+    write(1, buff, strlen(buff));
+  }
 }
 
 char pgetc(player *p){

@@ -1,17 +1,17 @@
-void move_cursor_abs(int x, int y);
+void move_cursor_abs(int x, int y, player *p);
 
 /*
  * sends cursor to origin, and changes the cursor position
  *
 */
-void go_home_cursor();
+void go_home_cursor(player *p);
 
 /*
  * go to (x,y) and print this string because you could print console codes with
  * this you can't be sure where the cursor is after, thus go_home() is called
  * to fix cursor location.
 */
-void place_str(int x, int y, char *fmt, ...);
+void place_str(int x, int y, player *p, char *fmt, ...) ;
 
 /*
  * helper to make sure a number is in the play field before sending the cursor
