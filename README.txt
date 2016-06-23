@@ -1,12 +1,19 @@
 snakem
 
 * About
-	Console snake game.
+	Telnet Snake Game with annoying colors
 	Eventually to be a telnet game for two players
 
 * Compile
-	Just run make :)
+	run make to compile
 
-* TODO:
-	handle player leaving the game in a mean way so that his snake does not
-	stay in memory
+	for the help menu:
+		$ ./snakem -h
+
+	to play locally set buffer size to 1 in your terminal
+		$ ./stty -icanon
+
+	to open a telnet server on 0.0.0.0:4444 run
+		$ ./snakem -p 4444
+
+

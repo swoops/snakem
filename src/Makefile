@@ -32,5 +32,5 @@ snake.o:  snake.c menu.o movement.o  player.o logging.o
 # 	rm /opt/$(TARGET)
 
 clean: 
-	rm ../$(TARGET) movement.o menu.o snake.o player.o
+	rm ../$(TARGET) movement.o menu.o snake.o player.o logging.o
 
