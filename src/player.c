@@ -10,7 +10,7 @@
 
 void player_unlock(player *p){
   /* should not unlock a player that is NULL? */
-  if (p->flags & DEAD) fatal("unlocking a dead snake");
+  if (p->flags & DEAD) server_log(ERROR, "unlocking a dead snake");
 
   pthread_mutex_unlock(&p->lock);
 
@@ -50,9 +50,6 @@ void destroy_player(player *p){
     p->flags |= DEAD;
     pthread_mutex_unlock(&p->lock);
 
-    if ( p->fd )
-      server_log("Player %s:%d first thread exiting\n", inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port));
-
     pthread_exit(0);
     return;
   }
@@ -67,20 +64,20 @@ void destroy_player(player *p){
   pthread_mutex_destroy(&p->lock);
 
   if ( p->fd ){
-    server_log("Player %s:%d scored %d\n", inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), p->score);
+    server_log(INFO, "Player %s:%d scored %d", inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), p->score);
     close(p->fd);
   }else if ( SERVER.log != stderr  ){
-    server_log("local Player scored %d\n", p->score);
+    server_log(INFO, "local Player scored %d", p->score);
   }
 
   /* high score check */
   if ( ( SERVER.high_score || p->fd ) && p->score > SERVER.high_score ){
     SERVER.high_score = p->score;
     if ( p->fd ){
-      server_log("!!!NEW HIGH SCORE!!! Player %s:%d scored %d\n", inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), p->score);
+      server_log(INFO, "!!!NEW HIGH SCORE!!! Player %s:%d scored %d", inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), p->score);
       close(p->fd);
     }else if ( SERVER.log != stderr  ){
-      server_log("!!!NEW HIGH SCORE!!!  local Player scored %d\n", p->score);
+      server_log(INFO, "!!!NEW HIGH SCORE!!!  local Player scored %d", p->score);
     }
   }
 
@@ -88,7 +85,7 @@ void destroy_player(player *p){
   free(p);
 
   if ( SERVER.log != stderr  )
-    server_log("snake is completely cleaned up\n");
+    server_log(INFO, "snake is completely cleaned up");
 
   pthread_exit(0);
 }
@@ -96,7 +93,7 @@ void destroy_player(player *p){
 
 player * init_player(){
   player *play = (player * ) malloc(sizeof(player));
-  if ( play == NULL ) fatal("could not make player\n");
+  if ( play == NULL ) server_log(FATAL, "could not make player");
 
   play->color = 0;
   play->score = 0;
@@ -106,7 +103,7 @@ player * init_player(){
   play->pix  =  malloc(sizeof(int) * play->size);
   if ( play->pix == NULL ){
     free(play);
-    fatal("could not get space for snake pix\n");
+    server_log(FATAL, "could not get space for snake pix");
   }
   play->slen = 3;
   int i;

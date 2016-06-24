@@ -50,8 +50,10 @@ int main(int argc, char *argv[]){
         SERVER.high_score = atoi(optarg);
         break;
       case 'l':
-        if ( ( SERVER.log = fopen(optarg, "a") ) == NULL )
-          fatal("could not open log file");
+        if ( ( SERVER.log = fopen(optarg, "a") ) == NULL ){
+          perror("could not open log file");
+          help_menu(argv[0], 1);
+        }
         break;
       case 'i':
         /* TODO: check bounds */
@@ -93,14 +95,14 @@ int main(int argc, char *argv[]){
     player *play = init_player();
 
     if (pthread_mutex_init(&play->lock, NULL) != 0) 
-        fatal("\n mutex init failed\n");
+        server_log(FATAL, "mutex init failed");
 
     if ( pthread_create(&play->tid_progress, NULL, (void *) &progess_game, play) != 0 )
-        fatal("\n swoopsed it all progress\n");
+        server_log(FATAL, "swoopsed it all progress");
 
 
     if ( pthread_create(&play->tid_controll, NULL, (void *) &player_controll, play) != 0 )
-        fatal("\n swoopsed it all controll\n");
+        server_log(FATAL, "swoopsed it all controll");
 
     pthread_join(play->tid_controll, NULL);
     pthread_join(play->tid_progress, NULL);
@@ -116,7 +118,7 @@ int main(int argc, char *argv[]){
     SERVER.addr = &host_addr;
 
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-        fatal("creating socket");
+        server_log(FATAL, "creating socket");
 
     bzero(&host_addr, sizeof(host_addr) );
 
@@ -125,36 +127,38 @@ int main(int argc, char *argv[]){
     host_addr.sin_port = htons(SERVER.port);
 
     if (bind(sockfd, (struct sockaddr *)&host_addr, sizeof(struct sockaddr)) == -1)
-        fatal("binding to socket");
+        server_log(FATAL, "binding to socket");
 
     if (listen(sockfd, 5) == -1) 
-        fatal("listening on socket");
+        server_log(FATAL, "listening on socket");
 
-    server_log("Listening on %s:%d\n", inet_ntoa(host_addr.sin_addr), ntohs(host_addr.sin_port));
+    server_log(INFO, "Listening on %s:%d", inet_ntoa(host_addr.sin_addr), ntohs(host_addr.sin_port));
 
     while(1) {
       sin_size = sizeof(struct sockaddr_in);
       new_sockfd = accept(sockfd, (struct sockaddr *)&client_addr, &sin_size);
       if(new_sockfd == -1 ) {
-        fatal("accepting connection");
+        server_log(ERROR, "accepting connection");
+        continue;
       }
 
-      server_log("New player from %s:%d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+      server_log(INFO, "New player from %s:%d", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
       player * play = init_player();
       play->fd = new_sockfd;
       play->addr = &client_addr;
 
-      if (pthread_mutex_init(&play->lock, NULL) != 0) 
-          fatal(" mutex init failed\n");
+      /* TODO: make this continue and not FATAL? */
+      if (pthread_mutex_init(&play->lock, NULL) != 0)
+          server_log(FATAL, " mutex init failed");
 
       if ( pthread_create(&play->tid_progress, NULL, (void *) &progess_game, play) != 0 )
-          fatal("\n swoopsed it all progress\n");
+          server_log(FATAL, "swoopsed it all progress");
 
       if ( pthread_create(&play->tid_controll, NULL, (void *) &player_controll, play) != 0 )
-          fatal("\n swoopsed it all controll\n");
+          server_log(FATAL, "swoopsed it all controll");
     }
 
-    server_log("shutting down server\n");
+    server_log(INFO, "shutting down server");
   }
   if ( SERVER.log != stderr )
     fclose(SERVER.log);

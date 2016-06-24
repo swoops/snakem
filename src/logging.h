@@ -1,10 +1,8 @@
+#define INFO  0
+#define ERROR  1
+#define FATAL 2
 
 /*
  * log stuff
 */
-void server_log(char *fmt, ...);
-
-/*
- * die and print message
-*/
-void fatal(char *msg);
+void server_log(int flags, char *fmt, ...);

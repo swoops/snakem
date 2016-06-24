@@ -17,7 +17,7 @@ void draw_snake(player *p){
 
   for ( i=0; i<p->slen; i++){
     if ( num_to_cord(p->pix[i], &pos) != 1)
-      server_log("[draw_snake]: num_to_cord(%d, head) != 1", p->pix[i]);
+      server_log(ERROR, "[draw_snake]: num_to_cord(%d, head) != 1", p->pix[i]);
     place_str(pos.x, pos.y, p, "s");
   }
 }
@@ -57,10 +57,8 @@ int player_controll(player *p){
           /* to pause just lock until done */
           /* TODO: disable for two players */
           player_lock(p);
-					server_log("\e[%dCPAUSED", (SERVER.max_x - 6)/2);
 					while(pgetc(p) != ' ')
 						usleep(1000);
-					server_log("\e[0m\e[2K");
           player_unlock(p);
           break;
         default:
@@ -126,10 +124,10 @@ void move_snake(player *p){
   if ( taili < 0 ) taili = taili + p->slen;
 
   if (  num_to_cord(p->pix[p->head], &phead) != 1 )
-    server_log("[move_snake]: num_to_cord(%d, head) != 1", p->pix[p->head]);
+    server_log(ERROR, "[move_snake]: num_to_cord(%d, head) != 1", p->pix[p->head]);
 
   if (  num_to_cord(p->pix[taili], &ptail) != 1 )
-    server_log("[move_snake]: num_to_cord(%d, head) != 1", p->pix[taili]);
+    server_log(ERROR, "[move_snake]: num_to_cord(%d, head) != 1", p->pix[taili]);
 
 
   // find new head
@@ -199,7 +197,7 @@ void put_pellet(player *p){
   int num = random() % ( ( SERVER.max_y-4 ) * (SERVER.max_x-5 ) );
 
   if ( num_to_cord(num, &pellet)  == 0 ){
-    server_log("[put_pellet]: pellet out of bounds (%d, %d): %d", pellet.x, pellet.y, num);
+    server_log(ERROR, "[put_pellet]: pellet out of bounds (%d, %d): %d", pellet.x, pellet.y, num);
   }
   p->pellet = num;
   place_str( pellet.x, pellet.y, p, "\e[38;5;0;48;5;46m*\e[0m");
