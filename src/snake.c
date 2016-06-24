@@ -99,7 +99,7 @@ int progess_game(player *p){
 }
 
 void grow_snake(player *p){
-  p->score += 100;
+  p->score += 50;
   show_score(p);
   if ( p->size == p->slen ){
     winner(p);  // TODO: realloc memory so no one wins... ever...

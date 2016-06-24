@@ -6,7 +6,11 @@
 #include  "player.h"
 
 void show_score(player *p){
-  place_str(0, 1,p, "SCORE: %10u", p->score);
+  int offset = SERVER.max_x - 35;
+  if ( SERVER.high_score  && offset > 0)
+    place_str(0, 1,p, "SCORE: %8u\e[%dCHIGH SCORE: %8u", p->score, offset,  SERVER.high_score);
+  else
+    place_str(0, 1,p, "SCORE: %8u", p->score);
 }
 
 void game_over(player *p){
