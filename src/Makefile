@@ -22,7 +22,7 @@ player.o:  player.c logging.o
 menu.o:  menu.c movement.o player.o
 	$(CC) $(CFALGS) -c menu.c 
 
-snake.o:  snake.c menu.o movement.o  player.o logging.o
+snake.o:  snake.c snake.h menu.o movement.o  player.o logging.o
 	$(CC) $(CFALGS) -c snake.c 
 
 # install: $(TARGET)

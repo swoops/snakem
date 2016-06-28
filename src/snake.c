@@ -169,13 +169,10 @@ void move_snake(player *p){
    * check pellet before "expensive" check of hitting itself
   */
   if ( head_num != p->pellet ){
-    /* check hit tail */
-    int i;
-    for ( i=1; i<p->slen; i++ )
-      if ( p->pix[i] == head_num ){
-        game_over(p);
-        destroy_player(p);
-      }
+    if ( snake_collision(p, head_num) ){
+      game_over(p);
+      destroy_player(p);
+    }
 
     /* collisions done, remove old tail because no pellot */
     place_str( ptail.x, ptail.y, p,  "\e[48;5;%dm \e[0m", p->color);
@@ -193,12 +190,35 @@ void move_snake(player *p){
   p->pix[p->head] =  head_num;
 
 }
+
+/* TODO: skip taxi cab distance through array? */
+int snake_collision(player *p, int col){
+  int i;
+
+  for ( i=1; i<p->slen; i++ )
+    if ( p->pix[i] == col )
+      return 1;
+
+  return 0;
+}
+
 void put_pellet(player *p){
   point pellet;
+  int max_num = (SERVER.max_x - 3)*(SERVER.max_y-2 ); 
 
-  // TODO: not this probably...
   // squre is from (3,3) to (max_x-3, max_y-2)
   int num = random() % ( ( SERVER.max_y-4 ) * (SERVER.max_x-5 ) );
+
+  /* 
+   * ensure the pellot is not in the snake 
+   * TODO: there has to be a better way!
+  */
+
+  /*
+    not so simple...
+    while ( snake_collision(p, num) )
+      num = (num + 1) % max_num;
+  */
 
   if ( num_to_cord(num, &pellet)  == 0 ){
     server_log(ERROR, "[put_pellet]: pellet out of bounds (%d, %d): %d", pellet.x, pellet.y, num);

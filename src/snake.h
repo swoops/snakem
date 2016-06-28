@@ -1,4 +1,10 @@
 #include "data_types.h"
+
+/*
+ * check if col pixel is in the snake body
+*/
+
+int snake_collision(player *p, int col);
 void move_snake(player *p);
 void put_pellet(player *p);
 void grow_snake(player *p);
