@@ -4,6 +4,7 @@
 #include  "data_types.h"
 #include  "movement.h"
 #include  "player.h"
+#include  "logging.h"
 
 void show_score(player *p){
   int offset = SERVER.max_x - 35;
@@ -27,6 +28,49 @@ void game_over(player *p){
   }
   player_write(p, "\e[2J");
   go_home_cursor(p);
+}
+
+int write_file(char *fname, player *p){
+  int bytes_read;
+  void *bookmark;
+  int bytes_written = 0;
+  char buff[256];
+
+  FILE *fp; 
+  server_log(ERROR, "[write_file] p at %p", p);
+  if (  ( fp = fopen(fname, "r") ) == NULL){
+      server_log(ERROR, "[write_file] could not open file: \"%s\"", fname);
+      return 1;
+  }
+
+  while ( ( bytes_read = fread(buff, sizeof(char),  sizeof(buff), fp) ) != 0  ) {
+
+    server_log(INFO, "buff has %d bytes\n", bytes_read);
+    if (bytes_read < 0) {
+      server_log(ERROR, "[write_file] Failed to read from file %s", fname);
+      fclose(fp);
+      return 1;
+    }
+
+    bookmark = buff;
+    while (bytes_read > 0) {
+      bytes_written = write(p->fd, bookmark, bytes_read);
+      if (bytes_written <= 0) {
+        server_log(ERROR, "[write_file] could not write to socket");
+        fclose(fp);
+        return 1;
+      }
+      server_log(INFO, "write: %d bytes to %d\n", bytes_written, p->fd);
+      server_log(ERROR, "[write_file] p at %p", p);
+      bytes_read -= bytes_written;
+      bookmark += bytes_written;
+    }
+
+  }
+
+  fclose(fp);
+  return 0;
+
 }
 
 void winner(player *p){

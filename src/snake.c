@@ -75,17 +75,21 @@ int player_controll(player *p){
 int progess_game(player *p){
   p->delay =  100000; 
 
-  /* 
-   * tell tellnet not to write characters to the screen, send every keypress,
-   * and don't be such a jerk... thanks SO:
-   * https://stackoverflow.com/questions/4532344/send-data-over-telnet-without-pressing-enter
-  */
-  player_write(p, 
-    "\xff\xfd\x22" /* IAC DO LINEMODE*/
-    "\xff\xfb\x01" /* IAC WILL ECHO */
-  ); 
-
-  player_write(p,CLEAR_SCREEN); /*clear screen*/
+  if ( p->fd ){
+    /* 
+     * tell tellnet not to write characters to the screen, send every keypress,
+     * and don't be such a jerk... thanks SO:
+     * https://stackoverflow.com/questions/4532344/send-data-over-telnet-without-pressing-enter
+    */
+    player_write(p, 
+      "\xff\xfd\x22" /* IAC DO LINEMODE*/
+      "\xff\xfb\x01" /* IAC WILL ECHO */
+    ); 
+    player_write(p,CLEAR_SCREEN); 
+		if ( SERVER.start_banner  && ! write_file(SERVER.start_banner , p) )
+				usleep(5000000);
+  }
+  player_write(p,CLEAR_SCREEN); 
 
   draw_board(p);
   draw_snake(p);

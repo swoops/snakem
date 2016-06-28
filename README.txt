@@ -17,3 +17,6 @@ snakem
 		$ ./snakem -p 4444
 
 
+TODO:
+	handle ctrl+c to clean up sockets nicely...
+	add usernames to high score 

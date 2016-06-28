@@ -28,9 +28,11 @@ void server_log(int flag, char *fmt, ...) {
   if ( flag == INFO ){
     fprintf(SERVER.log, "[%s] INFO: %s\n", stime, buff);
   }else if ( flag == ERROR ){
-    fprintf(SERVER.log, "[%s] ERROR: %s\n", stime, buff);
+    fprintf(SERVER.log, "[%s] ERROR: %s: %s\n", stime, buff, strerror(errno));
   }else if ( flag == FATAL ){
     fprintf(SERVER.log, "[%s] FATAL: %s: %s\n", stime, buff, strerror(errno));
+    if (SERVER.log != stderr)
+      fprintf(stderr , "[%s] FATAL: %s: %s\n", stime, buff, strerror(errno));
     exit(1);
   }
 

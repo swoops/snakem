@@ -5,10 +5,25 @@
 #include  "data_types.h"
 #include  <unistd.h>      /*getopt*/
 #include  <strings.h>     /*bzero*/
-#include <arpa/inet.h> /*htons*/
+#include  <arpa/inet.h>   /*htons*/
+#include  <signal.h>      /*sigemptyset,sigaction*/
 #include  <sys/socket.h>
 #include  "player.h"
 #include  "logging.h"
+
+void change_signal(){
+  /**
+   * stop sigpipe signal so that write returns error instead of fault
+   */
+  struct sigaction sa;
+  sa.sa_handler = SIG_IGN;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = 0;
+  if (sigaction(SIGPIPE, &sa, 0) == -1) {
+    server_log(FATAL, "Could not change SIGPIPE singal");
+  }
+
+}
 
 
 void help_menu(char *p, int x){
@@ -18,6 +33,7 @@ void help_menu(char *p, int x){
   fprintf(stderr, "\t-l: \tlog file\n");
   fprintf(stderr, "\t-i: \tspeed increase for pellots (default 1000)\n");
   fprintf(stderr, "\t-s: \tHigh Score to start with... better logging later :)\n");
+  fprintf(stderr, "\t-b: \tFile to be printed as the start banner\n");
   fprintf(stderr, "\n");
   exit(x);
 }
@@ -27,14 +43,15 @@ void help_menu(char *p, int x){
 int main(int argc, char *argv[]){
   /* TODO: put this junk in a function in another file */
   int ch;
-  SERVER.max_y       =  0;
-  SERVER.max_x       =  0;
-  SERVER.port        =  0;
-  SERVER.high_score  =  0;
-  SERVER.t_inc       =  1000;
-  SERVER.log         =  stderr;
+  SERVER.max_y         =  0;
+  SERVER.max_x         =  0;
+  SERVER.port          =  0;
+  SERVER.high_score    =  0;
+  SERVER.t_inc         =  1000;
+  SERVER.log           =  stderr;
+  SERVER.start_banner  =  NULL;
 
-  while ((ch = getopt (argc, argv, "hp:x:y:i:e:l:s:")) != -1){
+  while ((ch = getopt (argc, argv, "hp:x:y:b:i:e:l:s:")) != -1){
     switch (ch) {
       case 'h':
         help_menu(argv[0], 0);
@@ -42,6 +59,9 @@ int main(int argc, char *argv[]){
       case 'e':
         fprintf(stderr, "not implemented yet\n");
         help_menu(argv[0], 5);
+        break;
+      case 'b':
+        SERVER.start_banner = optarg;
         break;
       case 'p':
         SERVER.port = atoi(optarg);

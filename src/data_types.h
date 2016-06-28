@@ -34,6 +34,7 @@ typedef struct {
   int port;   // port to listen on
   unsigned int high_score;
   struct sockaddr_in * addr;
+  char * start_banner;
 } server;
 
 /* everying in here is unique to each playser */
