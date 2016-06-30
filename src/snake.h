@@ -6,7 +6,6 @@
 
 int snake_collision(player *p, int col);
 void move_snake(player *p);
-void put_pellet(player *p);
 void grow_snake(player *p);
 /*
  * thread to progress the game along

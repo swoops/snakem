@@ -37,7 +37,6 @@ typedef struct {
   unsigned int slen;    /* how many pixels */
   unsigned int size;    /* total size of array */
   unsigned int score;   /* what do you think it is */
-  int pellet;           /* location of pellet*/
   int color;            /* techo snake tiam */
   int flags;            /* sanke attributes */
   useconds_t delay;
@@ -55,6 +54,7 @@ typedef struct {
   FILE *log;
   int t_inc;                    /* how much to increase the speed per pellot */
   int port;                     /* port to listen on */
+  int pellet;                   /* location of pellet*/
   unsigned int high_score;
   struct sockaddr_in * addr;
   char * start_banner;

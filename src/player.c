@@ -78,10 +78,12 @@ void destroy_player(player *p){
 
 
 player * init_player(){
+  static int color = 0;
+  color = (color+111) % 215;  /* should cycle well, euler and all */
   player *play = (player * ) malloc(sizeof(player));
   if ( play == NULL ) server_log(FATAL, "could not make player");
 
-  play->color = 0;
+  play->color = 16+color;
   play->score = 0;
   play->size = 100;
   play->flags = 0;

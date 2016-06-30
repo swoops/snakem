@@ -7,9 +7,11 @@
 #include "movement.h"
 #include "menu.h"
 #include "snake.h"
+#include "server.h"
 #include  "player.h"
 #include  "logging.h"
 
+#define CAT  "\xf0\x9f\x90\xb1"
 
 void draw_snake(player *p){
   int i;
@@ -18,7 +20,7 @@ void draw_snake(player *p){
   for ( i=0; i<p->slen; i++){
     if ( num_to_cord(p->pix[i], &pos) != 1)
       server_log(ERROR, "[draw_snake]: num_to_cord(%d, head) != 1", p->pix[i]);
-    place_str(pos.x, pos.y, NULL, "s");
+    place_str(pos.x, pos.y, NULL, "\e[48;5;%dm \e[0m", p->color);
   }
 }
 
@@ -93,7 +95,7 @@ int progess_game(player *p){
 
   draw_board(p);
   draw_snake(p);
-  put_pellet(p);
+  serv_put_pellet(p);
   show_score(p);
   while(1){
     usleep(p->delay);
@@ -116,9 +118,6 @@ void grow_snake(player *p){
   p->delay -= SERVER.t_inc;  // go faster
 
   p->head = ( p->head+1 ) % p->slen;
-  // add anything that is not divisible by 2 
-  // euler ftw :)
-  p->color = ( p->color + 13 ) % 256; 
 }
 void move_snake(player *p){
   point phead, ptail;
@@ -168,22 +167,22 @@ void move_snake(player *p){
   /*
    * check pellet before "expensive" check of hitting itself
   */
-  if ( head_num != p->pellet ){
+  if ( head_num != serv_get_pellet() ){
     if ( snake_collision(p, head_num) ){
       game_over(p);
       destroy_player(p);
     }
 
     /* collisions done, remove old tail because no pellot */
-    place_str( ptail.x, ptail.y, NULL,  "\e[48;5;%dm \e[0m", p->color);
+    place_str( ptail.x, ptail.y, NULL,  " ");
   }else{
     grow_snake(p);
-    put_pellet(p);
+    serv_put_pellet(NULL);
     taili = p->head-1;
     if ( taili < 0 ) taili = taili + p->slen;
   }
 
-  place_str( phead.x, phead.y, NULL, "S");
+  place_str(phead.x, phead.y, NULL, "\e[48;5;%dm \e[0m", p->color);
 
   /* update memory struct */
   p->head = taili;
@@ -202,27 +201,3 @@ int snake_collision(player *p, int col){
   return 0;
 }
 
-void put_pellet(player *p){
-  point pellet;
-  /* int max_num = (SERVER.max_x - 3)*(SERVER.max_y-2 );  */
-
-  // squre is from (3,3) to (max_x-3, max_y-2)
-  int num = random() % ( ( SERVER.max_y-4 ) * (SERVER.max_x-5 ) );
-
-  /* 
-   * ensure the pellot is not in the snake 
-   * TODO: there has to be a better way!
-  */
-
-  /*
-    not so simple...
-    while ( snake_collision(p, num) )
-      num = (num + 1) % max_num;
-  */
-
-  if ( num_to_cord(num, &pellet)  == 0 ){
-    server_log(ERROR, "[put_pellet]: pellet out of bounds (%d, %d): %d", pellet.x, pellet.y, num);
-  }
-  p->pellet = num;
-  place_str( pellet.x, pellet.y, NULL, "\e[38;5;0;48;5;46m*\e[0m");
-}

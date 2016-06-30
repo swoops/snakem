@@ -1,3 +1,5 @@
+int serv_get_pellet();
+void serv_put_pellet(player *p);
 void serv_write(char *buff);
 int serv_get_highscore();
 void init_server();

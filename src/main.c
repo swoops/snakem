@@ -95,10 +95,13 @@ int main(int argc, char *argv[]){
     }
   }
 
+
   if ( SERVER.max_x == 0 || SERVER.max_x < 10 )
     SERVER.max_x =  50;
   if ( SERVER.max_y == 0 || SERVER.max_y < 10 )
     SERVER.max_y =  SERVER.max_x/2;
+
+  serv_put_pellet(NULL);  /* initialize pellet position after bounds set*/
 
   if ( SERVER.port == 0 ) server_log(FATAL, "Need a port to bind on");
 

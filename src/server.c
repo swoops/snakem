@@ -9,6 +9,7 @@
 #include  <netinet/in.h>  /*inet_ntoa*/
 #include  <arpa/inet.h>   /*inet_ntoa*/
 #include  "player.h"
+#include  "movement.h"
 
 void init_server(){
   /* TODO: init from config file */
@@ -134,4 +135,31 @@ int serv_get_highscore(){
   serv_unlock();
 
   return ret;
+}
+
+/*
+ * make sure pellet not placed in a snake
+*/
+void serv_put_pellet(player *p){
+  point pellet;
+
+  serv_lock();
+
+  if (p == NULL)
+    SERVER.pellet = random() % ( ( SERVER.max_y-4 ) * (SERVER.max_x-5 ) );
+
+  if ( num_to_cord(SERVER.pellet, &pellet)  == 0 )
+    server_log(ERROR, "[serv_put_pellet]: pellet out of bounds (%d, %d): %d", pellet.x, pellet.y, SERVER.pellet);
+
+  serv_unlock();
+  
+  place_str( pellet.x, pellet.y, p, "\e[38;5;0;48;5;46m*\e[0m");
+}
+
+int serv_get_pellet(){
+  int pellet;
+  serv_lock();
+  pellet = SERVER.pellet;
+  serv_unlock();
+  return pellet;
 }
