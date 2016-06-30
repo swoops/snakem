@@ -18,7 +18,7 @@ void draw_snake(player *p){
   for ( i=0; i<p->slen; i++){
     if ( num_to_cord(p->pix[i], &pos) != 1)
       server_log(ERROR, "[draw_snake]: num_to_cord(%d, head) != 1", p->pix[i]);
-    place_str(pos.x, pos.y, p, "s");
+    place_str(pos.x, pos.y, NULL, "s");
   }
 }
 
@@ -175,7 +175,7 @@ void move_snake(player *p){
     }
 
     /* collisions done, remove old tail because no pellot */
-    place_str( ptail.x, ptail.y, p,  "\e[48;5;%dm \e[0m", p->color);
+    place_str( ptail.x, ptail.y, NULL,  "\e[48;5;%dm \e[0m", p->color);
   }else{
     grow_snake(p);
     put_pellet(p);
@@ -183,7 +183,7 @@ void move_snake(player *p){
     if ( taili < 0 ) taili = taili + p->slen;
   }
 
-  place_str( phead.x, phead.y, p, "S");
+  place_str( phead.x, phead.y, NULL, "S");
 
   /* update memory struct */
   p->head = taili;
@@ -204,7 +204,7 @@ int snake_collision(player *p, int col){
 
 void put_pellet(player *p){
   point pellet;
-  int max_num = (SERVER.max_x - 3)*(SERVER.max_y-2 ); 
+  /* int max_num = (SERVER.max_x - 3)*(SERVER.max_y-2 );  */
 
   // squre is from (3,3) to (max_x-3, max_y-2)
   int num = random() % ( ( SERVER.max_y-4 ) * (SERVER.max_x-5 ) );
@@ -224,5 +224,5 @@ void put_pellet(player *p){
     server_log(ERROR, "[put_pellet]: pellet out of bounds (%d, %d): %d", pellet.x, pellet.y, num);
   }
   p->pellet = num;
-  place_str( pellet.x, pellet.y, p, "\e[38;5;0;48;5;46m*\e[0m");
+  place_str( pellet.x, pellet.y, NULL, "\e[38;5;0;48;5;46m*\e[0m");
 }

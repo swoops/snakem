@@ -1,4 +1,3 @@
-
 char pgetc(player *p);
 void player_unlock(player *p);
 void player_lock(player *p);

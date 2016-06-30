@@ -18,7 +18,9 @@
 
 /* for snake flags */
 #define DEAD 1    /* snake is dead, clean him off the road */
-#define TECHNO_TIAM 2  /*turn techno mode on/off*/
+#define KILL 2    /* snake is dead, clean him off the road */
+#define TECHNO_TIAM 4  /*turn techno mode on/off*/
+
 
 
 
@@ -26,16 +28,6 @@ typedef struct {
   int x,y;
 } point;
 
-/* should be common to all players, global */
-typedef struct {
-  int max_x, max_y;
-  FILE *log;
-  int t_inc;   // how much to increase the speed per pellot
-  int port;   // port to listen on
-  unsigned int high_score;
-  struct sockaddr_in * addr;
-  char * start_banner;
-} server;
 
 /* everying in here is unique to each playser */
 typedef struct {
@@ -56,6 +48,22 @@ typedef struct {
   int fd;               /* file descriptor for socket */
   struct sockaddr_in * addr; /* clients address */
 } player;
+
+/* should be common to all players, global */
+typedef struct {
+  int max_x, max_y;
+  FILE *log;
+  int t_inc;                    /* how much to increase the speed per pellot */
+  int port;                     /* port to listen on */
+  unsigned int high_score;
+  struct sockaddr_in * addr;
+  char * start_banner;
+  player ** players;            /* array of players NULL terminated */
+  int max_players;
+  int last_player;              /* index of last player */
+  pthread_mutex_t lock;         /*lock for threading */
+
+} server;
 
 
 // global server

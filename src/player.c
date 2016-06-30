@@ -1,12 +1,13 @@
-#include <pthread.h>
-#include <string.h> /*strlen*/
-#include <stdlib.h> /*malloc*/
-#include <sys/socket.h> /*inet_ntoa*/
-#include <netinet/in.h> /*inet_ntoa*/
-#include <arpa/inet.h> /*inet_ntoa*/
+#include  <pthread.h>
+#include  <string.h>      /*strlen*/
+#include  <stdlib.h>      /*malloc*/
+#include  <sys/socket.h>  /*inet_ntoa*/
+#include  <netinet/in.h>  /*inet_ntoa*/
+#include  <arpa/inet.h>   /*inet_ntoa*/
 #include  "data_types.h"
+#include  "server.h"
 #include  "player.h"
-#include "logging.h"
+#include  "logging.h"
 
 void player_unlock(player *p){
   /* should not unlock a player that is NULL? */
@@ -14,6 +15,13 @@ void player_unlock(player *p){
 
   pthread_mutex_unlock(&p->lock);
 
+}
+
+void player_lock(player *p){
+  if (p->flags & ( DEAD | KILL )) /* IT'S DEAD!.. WILL!!! || kill it */
+    destroy_player(p);
+
+  pthread_mutex_lock(&p->lock);
 }
 
 void player_write(player *p, char *buff){
@@ -30,22 +38,15 @@ char pgetc(player *p){
     return ch;
 }
 
-void player_lock(player *p){
-  if (p->flags & DEAD) /* IT'S DEAD!.. WILL!!! */
-    destroy_player(p);
-
-  pthread_mutex_lock(&p->lock);
-}
-
 void destroy_player(player *p){
   /*
    * called twice, per snake to exit, once per each thread first call marks
    * snake as dead, second call cleans up the mess
   */
 
-
   /* snake is alive, kill it and exit thread */
   if ( ( p->flags & DEAD ) == 0 ){
+    server_log(INFO, "part1 destroying player %p", p);
     pthread_mutex_lock(&p->lock);
     p->flags |= DEAD;
     pthread_mutex_unlock(&p->lock);
@@ -61,31 +62,16 @@ void destroy_player(player *p){
    * at least he won't be in our memory
   */
 
+  server_log(INFO, "part2 destroying player %p", p);
   pthread_mutex_destroy(&p->lock);
 
-  if ( p->fd ){
-    server_log(INFO, "Player %s:%d scored %d", inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), p->score);
-    close(p->fd);
-  }else if ( SERVER.log != stderr  ){
-    server_log(INFO, "local Player scored %d", p->score);
-  }
-
-  /* high score check */
-  if ( ( SERVER.high_score || p->fd ) && p->score > SERVER.high_score ){
-    SERVER.high_score = p->score;
-    if ( p->fd ){
-      server_log(INFO, "!!!NEW HIGH SCORE!!! Player %s:%d scored %d", inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), p->score);
-      close(p->fd);
-    }else if ( SERVER.log != stderr  ){
-      server_log(INFO, "!!!NEW HIGH SCORE!!!  local Player scored %d", p->score);
-    }
-  }
-
+  serv_check_highscore(p);
+  serv_del_player(p);
+  close(p->fd);
   free(p->pix);
   free(p);
 
-  if ( SERVER.log != stderr  )
-    server_log(INFO, "snake is completely cleaned up");
+  server_log(INFO, "snake is completely cleaned up");
 
   pthread_exit(0);
 }

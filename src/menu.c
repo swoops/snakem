@@ -5,11 +5,14 @@
 #include  "movement.h"
 #include  "player.h"
 #include  "logging.h"
+#include  "server.h"
 
 void show_score(player *p){
-  int offset = SERVER.max_x - 35;
-  if ( SERVER.high_score  && offset > 0)
-    place_str(0, 1,p, "SCORE: %8u\e[%dCHIGH SCORE: %8u", p->score, offset,  SERVER.high_score);
+  int offset    = SERVER.max_x - 35;
+  int highscore = serv_get_highscore();
+
+  if ( highscore  && offset > 0)
+    place_str(0, 1,p, "SCORE: %8u\e[%dCHIGH SCORE: %8u", p->score, offset,  highscore);
   else
     place_str(0, 1,p, "SCORE: %8u", p->score);
 }

@@ -5,16 +5,20 @@
 #include "data_types.h"
 #include "movement.h"
 #include "player.h"
+#include "server.h"
 #include <sys/socket.h>
 
+#define GO_HOME_STR "\e[H"
 void go_home_cursor(player *p){
-  player_write(p, "\e[H");
+  if (p != NULL)
+    player_write(p, "\e[H");
+  else
+    serv_write("\e[H");
 }
 
 // 0,0 is home... or should it be?
 void move_cursor_abs(int x, int y, player *p){
   char buff[40]; /* should not need more then that */
-  int len;
   x = check_bounds(x, SERVER.max_x, 0);
   y = check_bounds(y, SERVER.max_y, 0);
 
@@ -30,7 +34,10 @@ void move_cursor_abs(int x, int y, player *p){
   else if ( y > 0 )
     snprintf(buff, sizeof(buff),"\e[%dB", y);
 
-  player_write(p, buff);
+  if (p != NULL)
+    player_write(p,buff);
+  else
+    serv_write(buff);
 }
 
 void place_str(int x, int y, player *p, char *fmt, ...) {
@@ -40,7 +47,10 @@ void place_str(int x, int y, player *p, char *fmt, ...) {
   va_start(ap, fmt);
   vsnprintf(buff, sizeof(buff), fmt, ap);
   va_end(ap);
-  player_write(p, buff);
+  if (p != NULL)
+    player_write(p,buff);
+  else
+    serv_write(buff);
   go_home_cursor(p);
 }
 
@@ -55,8 +65,6 @@ int check_bounds(int n, int max, int min){
 
 int cord_to_num(point *p){
   // top left corner of play board is at (3,3)
-  short int ret;
-
   // no good
   if ( p->x < 3 || p->y < 3 ) return 0;
   if ( p->x > SERVER.max_x - 3 || p->y > SERVER.max_y - 2 ) return 0;

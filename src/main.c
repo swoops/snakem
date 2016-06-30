@@ -4,12 +4,13 @@
 #include  "snake.h"
 #include  "data_types.h"
 #include  <unistd.h>      /*getopt*/
-#include  <strings.h>     /*bzero*/
+#include  <string.h>     /*memset*/
 #include  <arpa/inet.h>   /*htons*/
 #include  <signal.h>      /*sigemptyset,sigaction*/
 #include  <sys/socket.h>
 #include  "player.h"
 #include  "logging.h"
+#include  "server.h"
 
 void change_signal(){
   /**
@@ -19,12 +20,10 @@ void change_signal(){
   sa.sa_handler = SIG_IGN;
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = 0;
-  if (sigaction(SIGPIPE, &sa, 0) == -1) {
+
+  if (sigaction(SIGPIPE, &sa, 0) == -1) 
     server_log(FATAL, "Could not change SIGPIPE singal");
-  }
-
 }
-
 
 void help_menu(char *p, int x){
   fprintf(stderr, "%s: [-x <width> ] [ -y <height> ] \n\n", p);
@@ -38,18 +37,10 @@ void help_menu(char *p, int x){
   exit(x);
 }
 
-
-
 int main(int argc, char *argv[]){
   /* TODO: put this junk in a function in another file */
   int ch;
-  SERVER.max_y         =  0;
-  SERVER.max_x         =  0;
-  SERVER.port          =  0;
-  SERVER.high_score    =  0;
-  SERVER.t_inc         =  1000;
-  SERVER.log           =  stderr;
-  SERVER.start_banner  =  NULL;
+  init_server();
 
   while ((ch = getopt (argc, argv, "hp:x:y:b:i:e:l:s:")) != -1){
     switch (ch) {
@@ -107,79 +98,60 @@ int main(int argc, char *argv[]){
   if ( SERVER.max_x == 0 || SERVER.max_x < 10 )
     SERVER.max_x =  50;
   if ( SERVER.max_y == 0 || SERVER.max_y < 10 )
-    SERVER.max_y =  SERVER.max_x;
+    SERVER.max_y =  SERVER.max_x/2;
 
-  /* playing locally... I am so lonely... */
-  if ( SERVER.port == 0 ){
-    /* make snake */
-    player *play = init_player();
+  if ( SERVER.port == 0 ) server_log(FATAL, "Need a port to bind on");
 
-    if (pthread_mutex_init(&play->lock, NULL) != 0) 
+  struct sockaddr_in host_addr, client_addr;
+  int sockfd, new_sockfd;  // Listen on sock_fd, new connection on new_fd
+
+  change_signal();
+  socklen_t sin_size;
+  
+  SERVER.addr = &host_addr;
+
+  if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+      server_log(FATAL, "creating socket");
+
+  memset(&host_addr, 0, sizeof(host_addr) );
+
+  host_addr.sin_family = AF_INET;
+  host_addr.sin_addr.s_addr = htons(INADDR_ANY);
+  host_addr.sin_port = htons(SERVER.port);
+
+  if (bind(sockfd, (struct sockaddr *)&host_addr, sizeof(struct sockaddr)) == -1)
+      server_log(FATAL, "binding to socket");
+
+  if (listen(sockfd, 5) == -1) 
+      server_log(FATAL, "listening on socket");
+
+  server_log(INFO, "Listening on %s:%d", inet_ntoa(host_addr.sin_addr), ntohs(host_addr.sin_port));
+
+  while(1) {
+    sin_size = sizeof(struct sockaddr_in);
+    new_sockfd = accept(sockfd, (struct sockaddr *)&client_addr, &sin_size);
+    if(new_sockfd == -1 )
+      server_log(FATAL, "[main] accepting connection");
+
+    server_log(INFO, "New player from %s:%d", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+    player * play = init_player();
+    play->fd = new_sockfd;
+    play->addr = &client_addr;
+
+    if ( serv_add_player(play) ) 
+      server_log(FATAL, "FAILED to add player, exiting");
+
+    /* TODO: make this continue and not FATAL? */
+    if (pthread_mutex_init(&play->lock, NULL) != 0)
         server_log(FATAL, "mutex init failed");
 
     if ( pthread_create(&play->tid_progress, NULL, (void *) &progess_game, play) != 0 )
         server_log(FATAL, "swoopsed it all progress");
 
-
     if ( pthread_create(&play->tid_controll, NULL, (void *) &player_controll, play) != 0 )
         server_log(FATAL, "swoopsed it all controll");
-
-    pthread_join(play->tid_controll, NULL);
-    pthread_join(play->tid_progress, NULL);
-    fprintf(FDOUT, "\e[2J");
-  }else{
-    /*
-    ** SERVER MODE!!!! **
-    */
-    struct sockaddr_in host_addr, client_addr;
-    int sockfd, new_sockfd;  // Listen on sock_fd, new connection on new_fd
-    socklen_t sin_size;
-    
-    SERVER.addr = &host_addr;
-
-    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-        server_log(FATAL, "creating socket");
-
-    bzero(&host_addr, sizeof(host_addr) );
-
-    host_addr.sin_family = AF_INET;
-    host_addr.sin_addr.s_addr = htons(INADDR_ANY);
-    host_addr.sin_port = htons(SERVER.port);
-
-    if (bind(sockfd, (struct sockaddr *)&host_addr, sizeof(struct sockaddr)) == -1)
-        server_log(FATAL, "binding to socket");
-
-    if (listen(sockfd, 5) == -1) 
-        server_log(FATAL, "listening on socket");
-
-    server_log(INFO, "Listening on %s:%d", inet_ntoa(host_addr.sin_addr), ntohs(host_addr.sin_port));
-
-    while(1) {
-      sin_size = sizeof(struct sockaddr_in);
-      new_sockfd = accept(sockfd, (struct sockaddr *)&client_addr, &sin_size);
-      if(new_sockfd == -1 ) {
-        server_log(ERROR, "accepting connection");
-        continue;
-      }
-
-      server_log(INFO, "New player from %s:%d", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-      player * play = init_player();
-      play->fd = new_sockfd;
-      play->addr = &client_addr;
-
-      /* TODO: make this continue and not FATAL? */
-      if (pthread_mutex_init(&play->lock, NULL) != 0)
-          server_log(FATAL, " mutex init failed");
-
-      if ( pthread_create(&play->tid_progress, NULL, (void *) &progess_game, play) != 0 )
-          server_log(FATAL, "swoopsed it all progress");
-
-      if ( pthread_create(&play->tid_controll, NULL, (void *) &player_controll, play) != 0 )
-          server_log(FATAL, "swoopsed it all controll");
-    }
-
-    server_log(INFO, "shutting down server");
   }
+
   if ( SERVER.log != stderr )
     fclose(SERVER.log);
     
