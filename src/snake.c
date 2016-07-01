@@ -55,14 +55,6 @@ int player_controll(player *p){
         case 's':
           change_dir(p, DOWN);
           break;
-        case ' ':
-          /* to pause just lock until done */
-          /* TODO: disable for two players */
-          player_lock(p);
-					while(pgetc(p) != ' ')
-						usleep(1000);
-          player_unlock(p);
-          break;
         default:
           player_lock(p);
           player_unlock(p);
@@ -173,8 +165,14 @@ void move_snake(player *p){
       destroy_player(p);
     }
 
-    /* collisions done, remove old tail because no pellot */
-    place_str( ptail.x, ptail.y, NULL,  " ");
+    /* 
+     * collisions done, remove old tail because no pellot but only if the
+     * pellot does not happen to be in the tail of the snake, else it will
+     * disapear 
+     */
+    if (taili != serv_get_pellet())
+      place_str( ptail.x, ptail.y, NULL,  " ");
+
   }else{
     grow_snake(p);
     serv_put_pellet(NULL);

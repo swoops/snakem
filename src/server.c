@@ -64,7 +64,6 @@ void serv_write(char *buff){
 
 int serv_del_player(player *p){
   serv_lock();
-  server_log(INFO, "player %p", p);
   
   if ( SERVER.last_player  == -1 ){
     server_log(INFO, "[serv_del_player] Can't del a player, no players to delet");
@@ -109,7 +108,6 @@ int serv_add_player(player *p){
   server_log(INFO, "Adding player %d", SERVER.last_player);
   SERVER.players[SERVER.last_player] = p;
   SERVER.players[SERVER.last_player+1] = NULL;
-  server_log(INFO, "Adding player %d", SERVER.last_player);
 
   serv_unlock();
   return 0;

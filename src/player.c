@@ -18,10 +18,12 @@ void player_unlock(player *p){
 }
 
 void player_lock(player *p){
-  if (p->flags & ( DEAD | KILL )) /* IT'S DEAD!.. WILL!!! || kill it */
-    destroy_player(p);
-
   pthread_mutex_lock(&p->lock);
+  if (p->flags & ( DEAD | KILL )){/* IT'S DEAD!.. WILL!!! || kill it */
+    pthread_mutex_unlock(&p->lock);
+    destroy_player(p);
+  } 
+
 }
 
 void player_write(player *p, char *buff){
@@ -49,8 +51,13 @@ void destroy_player(player *p){
     server_log(INFO, "part1 destroying player %p", p);
     pthread_mutex_lock(&p->lock);
     p->flags |= DEAD;
-    pthread_mutex_unlock(&p->lock);
 
+    /* get a response to kill controle thread if it is still there*/
+    player_write(p, 
+      "\xff\xfb\xf6" /* IAC WILL AYT*/
+    ); 
+
+    pthread_mutex_unlock(&p->lock);
     pthread_exit(0);
     return;
   }
@@ -61,6 +68,7 @@ void destroy_player(player *p){
    * it is what he would of wanted.
    * at least he won't be in our memory
   */
+  server_log(INFO, "Player %p:%s:%d scored %d", p, inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), p->score);
 
   server_log(INFO, "part2 destroying player %p", p);
   pthread_mutex_destroy(&p->lock);
