@@ -22,6 +22,10 @@
 #define TECHNO_TIAM 4  /*turn techno mode on/off*/
 
 
+#define MAX_PLAYER_NAME 16 
+
+
+
 
 
 typedef struct {
@@ -31,20 +35,21 @@ typedef struct {
 
 /* everying in here is unique to each playser */
 typedef struct {
-  int *pix;                   /* pointer to int array of pixels */
-  int head;                   /* index of head */
-  size_t dir;                 /* direction of snake */
-  unsigned int slen;          /* how many pixels */
-  unsigned int size;          /* total size of array */
-  unsigned int score;         /* what do you think it is */
-  int color;                  /* snake color */
-  int flags;                  /* sanke attributes */
-  useconds_t delay;           /* time to wait between advance */
-  pthread_mutex_t lock;       /*lock for threading */
+  char *username;               /* username for the snake */
+  int *pix;                     /* pointer to int array of pixels */
+  int head;                     /* index of head */
+  size_t dir;                   /* direction of snake */
+  unsigned int slen;            /* how many pixels */
+  unsigned int size;            /* total size of array */
+  unsigned int score;           /* what do you think it is */
+  int color;                    /* snake color */
+  int flags;                    /* sanke attributes */
+  useconds_t delay;             /* time to wait between advance */
+  pthread_mutex_t lock;         /* lock for threading */
   pthread_t tid_progress;
   pthread_t tid_controll;
-  int fd;                     /* file descriptor for socket */
-  struct sockaddr_in * addr;  /* clients address */
+  int fd;                       /* file descriptor for socket */
+  struct sockaddr_in * addr;    /* clients address */
 } player;
 
 /* should be common to all players, global */
@@ -60,7 +65,7 @@ typedef struct {
   player ** players;            /* array of players NULL terminated */
   int max_players;              /* max number of players */
   int last_player;              /* index of last player */
-  pthread_mutex_t lock;         /*lock for threading */
+  pthread_mutex_t lock;         /* lock for threading */
 
 } server;
 

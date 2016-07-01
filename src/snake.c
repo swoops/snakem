@@ -37,7 +37,7 @@ void change_dir(player *p, unsigned  int dir){
 int player_controll(player *p){
   char ch;
 
-  while((ch = pgetc(p)) != 'q' ){
+  while((ch = player_getc(p)) != 'q' ){
     switch(ch){
         case 'l':
         case 'd':

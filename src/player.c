@@ -34,7 +34,7 @@ void player_write(player *p, char *buff){
   }
 }
 
-char pgetc(player *p){
+char player_getc(player *p){
     char ch;
     read(p->fd, &ch, 1);
     return ch;
@@ -70,6 +70,9 @@ void destroy_player(player *p){
   */
   server_log(INFO, "Player %p:%s:%d scored %d", p, inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), p->score);
 
+  if ( p->username != NULL )
+    free(p->username);
+
   server_log(INFO, "part2 destroying player %p", p);
   pthread_mutex_destroy(&p->lock);
 
@@ -83,7 +86,16 @@ void destroy_player(player *p){
 
   pthread_exit(0);
 }
-
+int player_set_name(char *name, player *p){
+  player_lock(p);
+  p->username = strndup(name, MAX_PLAYER_NAME);
+  player_unlock(p);
+  if ( p->username == NULL ){
+    server_log(ERROR, "[player_set_name] Could not set username");
+    return 1;
+  }
+  return 0;
+}
 
 player * init_player(){
   static int color = 0;
@@ -91,12 +103,12 @@ player * init_player(){
   player *play = (player * ) malloc(sizeof(player));
   if ( play == NULL ) server_log(FATAL, "could not make player");
 
-  play->color = 16+color;
-  play->score = 0;
-  play->size = 100;
-  play->flags = 0;
-  play->fd = 0;  /* assume stdin */
-  play->pix  =  malloc(sizeof(int) * play->size);
+  play->username  =  NULL;
+  play->color     =  16+color;
+  play->score     =  0;
+  play->size      =  100;
+  play->flags     =  0;
+  play->pix       =  malloc(sizeof(int) * play->size);
   if ( play->pix == NULL ){
     free(play);
     server_log(FATAL, "could not get space for snake pix");
