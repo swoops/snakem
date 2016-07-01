@@ -33,6 +33,7 @@ void help_menu(char *p, int x){
   fprintf(stderr, "\t-i: \tspeed increase for pellots (default 1000)\n");
   fprintf(stderr, "\t-s: \tHigh Score to start with... better logging later :)\n");
   fprintf(stderr, "\t-b: \tFile to be printed as the start banner\n");
+  fprintf(stderr, "\t-m: \tMax number of players\n");
   fprintf(stderr, "\n");
   exit(x);
 }
@@ -56,6 +57,9 @@ int main(int argc, char *argv[]){
         break;
       case 'p':
         SERVER.port = atoi(optarg);
+        break;
+      case 'm':
+        SERVER.max_players = atoi(optarg);
         break;
       case 's':
         SERVER.high_score = atoi(optarg);
@@ -131,6 +135,9 @@ int main(int argc, char *argv[]){
   server_log(INFO, "Listening on %s:%d", inet_ntoa(host_addr.sin_addr), ntohs(host_addr.sin_port));
 
   while(1) {
+    /* if server is full don't go taking more connections... */
+    while( serv_full() ) sleep(1);
+
     sin_size = sizeof(struct sockaddr_in);
     new_sockfd = accept(sockfd, (struct sockaddr *)&client_addr, &sin_size);
     if(new_sockfd == -1 )
@@ -141,8 +148,9 @@ int main(int argc, char *argv[]){
     play->fd = new_sockfd;
     play->addr = &client_addr;
 
-    if ( serv_add_player(play) ) 
-      server_log(FATAL, "FAILED to add player, exiting");
+    /* while() sleep() loop should keep this from failing so if it does die */
+    if ( serv_add_player(play) )
+      server_log(FATAL, "FAILED to add player to server list");
 
     /* TODO: make this continue and not FATAL? */
     if (pthread_mutex_init(&play->lock, NULL) != 0)

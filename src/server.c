@@ -134,6 +134,14 @@ int serv_get_highscore(){
 
   return ret;
 }
+int serv_full(){
+  int ret = 0;
+  serv_lock();
+  if ( SERVER.max_players == SERVER.last_player+1 )
+    ret++;
+  serv_unlock();
+  return ret;
+}
 
 /*
  * make sure pellet not placed in a snake

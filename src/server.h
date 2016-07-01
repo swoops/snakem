@@ -1,3 +1,4 @@
+int serv_full();
 int serv_get_pellet();
 void serv_put_pellet(player *p);
 void serv_write(char *buff);
