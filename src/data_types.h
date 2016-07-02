@@ -14,8 +14,6 @@
 #define  LEFT   8   //  \e[1D
 #define  HOLDD  16  //  \e[1D
 
-#define CLEAR_SCREEN "\e[2J"
-
 /* for snake flags */
 #define DEAD 1    /* snake is dead, clean him off the road */
 #define KILL 2    /* snake is dead, clean him off the road */
@@ -35,7 +33,7 @@ typedef struct {
 
 /* everying in here is unique to each playser */
 typedef struct {
-  char *username;               /* username for the snake */
+  char *name;                   /* username for the snake */
   int *pix;                     /* pointer to int array of pixels */
   int head;                     /* index of head */
   size_t dir;                   /* direction of snake */

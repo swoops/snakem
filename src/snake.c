@@ -1,6 +1,6 @@
-#include<stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
-#include<pthread.h>
+#include <pthread.h>
 #include <unistd.h> /*usleep*/
 #include <string.h>
 #include "data_types.h"
@@ -8,10 +8,11 @@
 #include "menu.h"
 #include "snake.h"
 #include "server.h"
-#include  "player.h"
-#include  "logging.h"
+#include "player.h"
+#include "logging.h"
 
-#define CAT  "\xf0\x9f\x90\xb1"
+#define CAT_CODE  "\xf0\x9f\x90\xb1"
+
 
 void draw_snake(player *p){
   int i;
@@ -34,7 +35,7 @@ void change_dir(player *p, unsigned  int dir){
     player_unlock(p);
 }
 
-int player_controll(player *p){
+int snake_control(player *p){
   char ch;
 
   while((ch = player_getc(p)) != 'q' ){
@@ -60,39 +61,45 @@ int player_controll(player *p){
           player_unlock(p);
     }
   }
-  player_write(p, CLEAR_SCREEN);
+  clear_screen(p);
   destroy_player(p);
   return 0;
 
 }
 
 int progess_game(player *p){
-  p->delay =  100000; 
+  if (player_set_name(p))
+    destroy_player(p);
 
-  if ( p->fd ){
-    /* 
-     * tell tellnet not to write characters to the screen, send every keypress,
-     * and don't be such a jerk... thanks SO:
-     * https://stackoverflow.com/questions/4532344/send-data-over-telnet-without-pressing-enter
-    */
-    player_write(p, 
-      "\xff\xfd\x22" /* IAC DO LINEMODE*/
-      "\xff\xfb\x01" /* IAC WILL ECHO */
-    ); 
-    player_write(p,CLEAR_SCREEN); 
-		if ( SERVER.start_banner  && ! write_file(SERVER.start_banner , p) )
-				usleep(5000000);
+  p->flags &= ( (int) -1 ) ^ DEAD; 
+
+  if ( pthread_create(&p->tid_controll, NULL, (void *) &snake_control, p) != 0 )
+      server_log(FATAL, "Could not start control thread");
+
+  /* 
+   * tell tellnet not to write characters to the screen, send every keypress,
+   * and don't be such a jerk... thanks SO:
+   * https://stackoverflow.com/questions/4532344/send-data-over-telnet-without-pressing-enter
+  */
+  player_write(p,
+    "\xff\xfd\x22" /* IAC DO LINEMODE*/
+    "\xff\xfb\x01" /* IAC WILL ECHO */
+  ); 
+  clear_screen(p);
+
+  if ( SERVER.start_banner  && ! write_file(SERVER.start_banner , p) ){
+      usleep(5000000);
+      clear_screen(p);
   }
-  player_write(p,CLEAR_SCREEN); 
 
   draw_board(p);
   draw_snake(p);
   serv_put_pellet(p);
   show_score(p);
+
   while(1){
     usleep(p->delay);
     move_snake(p);
-    if (SERVER.port == 0 ) fflush(FDOUT);
   }
 }
 

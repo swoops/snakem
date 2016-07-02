@@ -29,7 +29,7 @@ void game_over(player *p){
 		if (SERVER.port == 0) fflush(FDOUT);
     usleep(500000);
   }
-  player_write(p, "\e[2J");
+  clear_screen(p);
   go_home_cursor(p);
 }
 
@@ -59,14 +59,13 @@ int write_file(char *fname, player *p){
       if (bytes_written <= 0) {
         server_log(ERROR, "[write_file] could not write to socket");
         fclose(fp);
-        return 1;
+        destroy_player(p);
       }
       bytes_read -= bytes_written;
       bookmark += bytes_written;
     }
 
   }
-
   fclose(fp);
   return 0;
 
@@ -85,7 +84,7 @@ void winner(player *p){
     usleep(500000);
   }
 
-  player_write(p, "\e[2J");
+  clear_screen(p);
   go_home_cursor(p);
 }
 

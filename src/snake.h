@@ -14,7 +14,7 @@ int progess_game(player *p);
 /*
  * thread for user to control snake direction 
 */
-int player_controll(player *p);
+int snake_control(player *p);
 /* 
  * put snake on board the first time
 */

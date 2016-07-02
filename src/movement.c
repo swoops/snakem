@@ -9,11 +9,20 @@
 #include <sys/socket.h>
 
 #define GO_HOME_STR "\e[H"
+#define CLEAR_SCREEN_STR "\e[2J"
+
+void clear_screen(player *p){
+  if (p != NULL)
+    write(p->fd, CLEAR_SCREEN_STR, sizeof(CLEAR_SCREEN_STR));
+  else
+    serv_write(CLEAR_SCREEN_STR);
+}
+
 void go_home_cursor(player *p){
   if (p != NULL)
-    player_write(p, "\e[H");
+    write(p->fd, GO_HOME_STR, sizeof(GO_HOME_STR));
   else
-    serv_write("\e[H");
+    serv_write(GO_HOME_STR);
 }
 
 // 0,0 is home... or should it be?

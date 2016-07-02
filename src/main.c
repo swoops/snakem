@@ -143,7 +143,7 @@ int main(int argc, char *argv[]){
     if(new_sockfd == -1 )
       server_log(FATAL, "[main] accepting connection");
 
-    server_log(INFO, "New player from %s:%d", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+    server_log(INFO, "New connection from %s:%d", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
     player * play = init_player();
     play->fd = new_sockfd;
     play->addr = &client_addr;
@@ -157,10 +157,7 @@ int main(int argc, char *argv[]){
         server_log(FATAL, "mutex init failed");
 
     if ( pthread_create(&play->tid_progress, NULL, (void *) &progess_game, play) != 0 )
-        server_log(FATAL, "swoopsed it all progress");
-
-    if ( pthread_create(&play->tid_controll, NULL, (void *) &player_controll, play) != 0 )
-        server_log(FATAL, "swoopsed it all controll");
+        server_log(FATAL, "failed to make progress thread");
   }
 
   if ( SERVER.log != stderr )

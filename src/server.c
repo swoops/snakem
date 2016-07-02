@@ -117,11 +117,7 @@ void serv_check_highscore(player *p){
   serv_lock();
   if ( ( SERVER.high_score || p->fd ) && p->score > SERVER.high_score ){
     SERVER.high_score = p->score;
-    if ( p->fd ){
-      server_log(INFO, "!!!NEW HIGH SCORE!!! Player %s:%d scored %d", inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), p->score);
-    }else if ( SERVER.log != stderr  ){
-      server_log(INFO, "!!!NEW HIGH SCORE!!!  local Player scored %d", p->score);
-    }
+    server_log(INFO, "!!!NEW HIGH SCORE!!! Player %s %s:%d scored %d", p->name, inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), p->score);
   }
   serv_unlock();
 }

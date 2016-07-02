@@ -1,3 +1,4 @@
+void clear_screen(player *p);
 void move_cursor_abs(int x, int y, player *p);
 
 /*
