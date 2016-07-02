@@ -85,6 +85,7 @@ int progess_game(player *p){
     "\xff\xfd\x22" /* IAC DO LINEMODE*/
     "\xff\xfb\x01" /* IAC WILL ECHO */
   ); 
+  serv_notify_all("%s Joined", p->name);
   clear_screen(p);
 
   if ( SERVER.start_banner  && ! write_file(SERVER.start_banner , p) ){

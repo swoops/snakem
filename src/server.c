@@ -3,8 +3,9 @@
 #include  "data_types.h"
 #include  "logging.h"
 #include  "server.h"
-#include <string.h> /*strlen*/
-#include <unistd.h> /*sleep*/
+#include  <stdarg.h>      /*va_start*/
+#include  <string.h>      /*strlen*/
+#include  <unistd.h>      /*sleep*/
 #include  <sys/socket.h>  /*inet_ntoa*/
 #include  <netinet/in.h>  /*inet_ntoa*/
 #include  <arpa/inet.h>   /*inet_ntoa*/
@@ -164,4 +165,20 @@ int serv_get_pellet(){
   pellet = SERVER.pellet;
   serv_unlock();
   return pellet;
+}
+
+void serv_notify_all(char *fmt, ...) {
+  int i;
+  int max_str = SERVER.max_x +17;
+  char buff[max_str];
+
+  va_list ap;
+  va_start(ap, fmt);
+  vsnprintf(buff, max_str, fmt, ap);
+  va_end(ap);
+
+  serv_lock();
+  for (i=0; i<=SERVER.last_player; i++)
+    place_str(2, SERVER.max_y+2, SERVER.players[i], "%s", buff);
+  serv_unlock();
 }
