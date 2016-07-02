@@ -67,7 +67,7 @@ int snake_control(player *p){
 
 }
 
-int progess_game(player *p){
+int progress_game(player *p){
   if (player_set_name(p))
     destroy_player(p);
 
@@ -85,7 +85,7 @@ int progess_game(player *p){
     "\xff\xfd\x22" /* IAC DO LINEMODE*/
     "\xff\xfb\x01" /* IAC WILL ECHO */
   ); 
-  serv_notify_all("%s Joined", p->name);
+  serv_notify_all("\e[38;5;%dm%s Joined\e[00m", p->color, p->name);
   clear_screen(p);
 
   if ( SERVER.start_banner  && ! write_file(SERVER.start_banner , p) ){

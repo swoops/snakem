@@ -156,7 +156,7 @@ int main(int argc, char *argv[]){
     if (pthread_mutex_init(&play->lock, NULL) != 0)
         server_log(FATAL, "mutex init failed");
 
-    if ( pthread_create(&play->tid_progress, NULL, (void *) &progess_game, play) != 0 )
+    if ( pthread_create(&play->tid_progress, NULL, (void *) &progress_game, play) != 0 )
         server_log(FATAL, "failed to make progress thread");
   }
 

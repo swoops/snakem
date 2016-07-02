@@ -58,8 +58,13 @@ void serv_write(char *buff){
   int i;
   int len = strlen(buff);
   serv_lock();
-  for (i=0; i<=SERVER.last_player; i++)
-    write(SERVER.players[i]->fd, buff, len);
+  /* more effecent to use write() so strlen() runs once */
+  for (i=0; i<=SERVER.last_player; i++){
+    pthread_mutex_lock(&SERVER.players[i]->lock);
+    if ( ( SERVER.players[i]->flags & DEAD ) == 0 )
+      write(SERVER.players[i]->fd, buff, len);
+    pthread_mutex_unlock(&SERVER.players[i]->lock);
+  }
   serv_unlock();
 }
 
@@ -114,13 +119,16 @@ int serv_add_player(player *p){
   return 0;
 }
 
-void serv_check_highscore(player *p){
+int serv_check_highscore(player *p){
+  int flag = 0;
   serv_lock();
   if ( ( SERVER.high_score || p->fd ) && p->score > SERVER.high_score ){
     SERVER.high_score = p->score;
     server_log(INFO, "!!!NEW HIGH SCORE!!! Player %s %s:%d scored %d", p->name, inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), p->score);
+    flag = 1;
   }
   serv_unlock();
+  return flag;
 }
 
 int serv_get_highscore(){
@@ -178,7 +186,12 @@ void serv_notify_all(char *fmt, ...) {
   va_end(ap);
 
   serv_lock();
-  for (i=0; i<=SERVER.last_player; i++)
-    place_str(2, SERVER.max_y+2, SERVER.players[i], "%s", buff);
+  for (i=0; i<=SERVER.last_player; i++){
+    pthread_mutex_lock(&SERVER.players[i]->lock);
+    if ( ( SERVER.players[i]->flags & DEAD ) == 0 )
+      place_str(2, SERVER.max_y+2, SERVER.players[i], "%s", buff);
+    pthread_mutex_unlock(&SERVER.players[i]->lock);
+  }
   serv_unlock();
+
 }

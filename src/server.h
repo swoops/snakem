@@ -9,4 +9,4 @@ void serv_lock();
 void serv_unlock();
 int serv_del_player(player *p);
 int serv_add_player(player *p);
-void serv_check_highscore(player *p);
+int serv_check_highscore(player *p);

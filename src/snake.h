@@ -10,7 +10,7 @@ void grow_snake(player *p);
 /*
  * thread to progress the game along
 */
-int progess_game(player *p);
+int progress_game(player *p);
 /*
  * thread for user to control snake direction 
 */

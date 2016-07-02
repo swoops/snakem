@@ -70,7 +70,11 @@ void destroy_player(player *p){
       inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), 
       p->score);
 
-  serv_check_highscore(p);
+  if ( serv_check_highscore(p) )
+    serv_notify_all("\e[38;5;%dm%s HIGH SCORE got %d\e[0m ", p->color, p->name, p->score);
+  else
+    serv_notify_all("\e[38;5;%dm%s DIES with %d\e[0m ", p->color, p->name, p->score);
+
   if ( p->name != NULL ) free(p->name);
 
   server_log(INFO, "part2 destroying player %p", p);

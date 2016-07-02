@@ -12,11 +12,10 @@ snakem
   to open a telnet server on 0.0.0.0:4444 run
     $ ./snakem -p 4444
 
-
 TODO:
+  snakes hit each other
+  less socket writes but bigger, save some bandwidth
   handle ctrl+c to clean up sockets nicely...
-  add usernames
-  add honeypot
   add a high score log
   add "A Challenger Approaches" nag
   add High Score screen
