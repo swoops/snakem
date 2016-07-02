@@ -145,9 +145,13 @@ int player_set_name(player *p){
   }
 
   /* dumb bot trying to get lucky... I am not that type of game! */
-  if (len == 4 && strcmp("root",  p->name) == 0) goto its_a_bot;
-  if (len == 2 && strcmp("sa",    p->name) == 0) goto its_a_bot;
-  if (len == 5 && strcmp("admin", p->name) == 0) goto its_a_bot;
+  if ( len > 4 ){
+    if (len == 6 && strcmp("nobody",  p->name) == 0) goto its_a_bot;
+    if (len == 5 && strcmp("admin", p->name) == 0) goto its_a_bot;
+  }else{
+    if (len == 4 && strcmp("root",  p->name) == 0) goto its_a_bot;
+    if (len == 2 && strcmp("sa",    p->name) == 0) goto its_a_bot;
+  }
 
   /* you got here, all is well */
   server_log(INFO, "New player %s", p->name);

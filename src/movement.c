@@ -8,9 +8,6 @@
 #include "server.h"
 #include <sys/socket.h>
 
-#define GO_HOME_STR "\e[H"
-#define CLEAR_SCREEN_STR "\e[2J"
-
 void clear_screen(player *p){
   if (p != NULL)
     write(p->fd, CLEAR_SCREEN_STR, sizeof(CLEAR_SCREEN_STR));

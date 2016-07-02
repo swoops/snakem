@@ -8,13 +8,22 @@
 #include  "server.h"
 
 void show_score(player *p){
-  int offset    = SERVER.max_x - 35;
-  int highscore = serv_get_highscore();
+  char buff[128];
 
-  if ( highscore  && offset > 0)
-    place_str(0, 1,p, "SCORE: %8u\e[%dCHIGH SCORE: %8u", p->score, offset,  highscore);
-  else
-    place_str(0, 1,p, "SCORE: %8u", p->score);
+  serv_lock();
+  if ( SERVER.hs_name == NULL )
+    server_log(FATAL, "%s [show_score]  line:%d should not have NULL highscore name", __FILE__, __LINE__ );
+
+  snprintf(buff, sizeof(buff), 
+      "\e[H\e[2K Your Score\e[%dCHIGH SCORE\e[H\e[1B"
+      "\e[2K%8u\e[%zuC%s:%8u",
+      SERVER.max_x - 22,
+      p->score, 
+      (size_t) SERVER.max_x - 17 - strlen(SERVER.hs_name), 
+      SERVER.hs_name, SERVER.high_score
+  );
+  serv_unlock();
+  player_write(p, buff);
 }
 
 void game_over(player *p){

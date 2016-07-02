@@ -23,6 +23,10 @@
 #define MAX_PLAYER_NAME 16 
 
 
+/* char codes usesd often */
+
+#define GO_HOME_STR "\e[H"
+#define CLEAR_SCREEN_STR "\e[2J"
 
 
 
@@ -64,6 +68,7 @@ typedef struct {
   int max_players;              /* max number of players */
   int last_player;              /* index of last player */
   pthread_mutex_t lock;         /* lock for threading */
+  char * hs_name;               /* name of player with high score */
 
 } server;
 

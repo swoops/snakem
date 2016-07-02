@@ -32,6 +32,7 @@ void help_menu(char *p, int x){
   fprintf(stderr, "\t-l: \tlog file\n");
   fprintf(stderr, "\t-i: \tspeed increase for pellots (default 1000)\n");
   fprintf(stderr, "\t-s: \tHigh Score to start with... better logging later :)\n");
+  fprintf(stderr, "\t-n: \tName of player with high score (default Nobody)\n");
   fprintf(stderr, "\t-b: \tFile to be printed as the start banner\n");
   fprintf(stderr, "\t-m: \tMax number of players\n");
   fprintf(stderr, "\n");
@@ -43,7 +44,7 @@ int main(int argc, char *argv[]){
   int ch;
   init_server();
 
-  while ((ch = getopt (argc, argv, "hp:x:y:b:i:e:l:s:")) != -1){
+  while ((ch = getopt (argc, argv, "hp:x:y:b:i:e:l:s:n:")) != -1){
     switch (ch) {
       case 'h':
         help_menu(argv[0], 0);
@@ -64,9 +65,18 @@ int main(int argc, char *argv[]){
       case 's':
         SERVER.high_score = atoi(optarg);
         break;
+      case 'n':
+        if ( strlen(optarg) > MAX_PLAYER_NAME )
+          server_log(FATAL, "%s [main] line: %d provided name too big", __FILE__, __LINE__);
+
+        free(SERVER.hs_name);
+
+        if ( ( SERVER.hs_name = strdup(optarg) ) == NULL )
+          server_log(FATAL, "%s [main] line: %d strdup() failed", __FILE__, __LINE__);
+        break;
       case 'l':
         if ( ( SERVER.log = fopen(optarg, "a") ) == NULL ){
-          perror("could not open log file");
+          server_log(FATAL, "%s [main] line: %d could not open log file", __FILE__, __LINE__);
           help_menu(argv[0], 1);
         }
         break;

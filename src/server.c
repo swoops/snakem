@@ -24,6 +24,11 @@ void init_server(){
   SERVER.last_player   =  -1;
   SERVER.max_players   =  5;
 
+  SERVER.hs_name = strdup("Nobody");
+
+  if (SERVER.hs_name == NULL)
+    server_log(FATAL, "%s [init_server]  line:%d ", __FILE__, __LINE__ );
+
   if (pthread_mutex_init(&SERVER.lock, NULL) != 0)
       server_log(FATAL, "[init_server] failed mutex init");
 
@@ -122,11 +127,18 @@ int serv_add_player(player *p){
 int serv_check_highscore(player *p){
   int flag = 0;
   serv_lock();
-  if ( ( SERVER.high_score || p->fd ) && p->score > SERVER.high_score ){
-    SERVER.high_score = p->score;
-    server_log(INFO, "!!!NEW HIGH SCORE!!! Player %s %s:%d scored %d", p->name, inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), p->score);
+  if ( p->score > SERVER.high_score ){
     flag = 1;
+    SERVER.high_score = p->score;
+    server_log(INFO, "!!!NEW HIGH SCORE!!! Player %s %s:%d scored %d", 
+      p->name, inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), p->score);
+
+    /* update SERVER with name of current high score holder */
+    if ( SERVER.hs_name != NULL )
+      free(SERVER.hs_name);
+    SERVER.hs_name = strdup(p->name);
   }
+
   serv_unlock();
   return flag;
 }
