@@ -1,5 +1,5 @@
 #include  <string.h>      /*strlen*/
-#include  <stdio.h>       /*strlen*/
+#include  <stdio.h>       
 #include  <stdlib.h>
 #include  "data_types.h"
 #include  "movement.h"
@@ -15,9 +15,7 @@ void show_score(player *p){
     server_log(FATAL, "%s [show_score]  line:%d should not have NULL highscore name", __FILE__, __LINE__ );
 
   snprintf(buff, sizeof(buff), 
-      "\e[H\e[2K Your Score\e[%dCHIGH SCORE\e[H\e[1B"
-      "\e[2K%8u\e[%zuC%s:%8u",
-      SERVER.max_x - 22,
+      "\e[H\e[1B\e[2K%8u\e[%zuC%s:%8u",
       p->score, 
       (size_t) SERVER.max_x - 17 - strlen(SERVER.hs_name), 
       SERVER.hs_name, SERVER.high_score
@@ -98,19 +96,55 @@ void winner(player *p){
 }
 
 void draw_board(player *p){
-  char bar[SERVER.max_x ];
-  memset(bar, 0x23, SERVER.max_x-1 );
-  bar[SERVER.max_x-1] = 0x00; /* just to be sure */
-
-  /* draaw top of box */
-  place_str( 1, 2, p, bar);
-  /* place edges */
+  #define TMP_STR1 "\e[H\e[2K Your Score\e["
+  #define TMP_STR2 "CHIGH SCORE\e[H\e[2B "
   int i;
-  for ( i=3; i<SERVER.max_y-1; i++ ){
-    place_str( 1, i, p, "#\e[%dC#", SERVER.max_x-3);
-  }
-  /* place bottom */
-  place_str( 1, SERVER.max_y-1, p,  bar);
+  int s_buff  = sizeof(TMP_STR1) + 3 + sizeof(TMP_STR2)  /* SCIRE: string + shift right ammount + string + home+down2 */
+              + SERVER.max_x - 1												 /* first bar (easy) */
+						  + (SERVER.max_y-4) * 18									   /* sides: max_len  * height */      
+						  + 10																			 /* one more newline backup */
+              + SERVER.max_x - 1												 /* second bar (easy) */
+						  + 1;																			 /* Null terminate */
 
-  go_home_cursor(p);
+  char buff[s_buff];
+  char *ptr = buff;
+
+  /* SCORE PART */
+  ptr += sprintf( ptr,
+      TMP_STR1 "%d" TMP_STR2,
+      SERVER.max_x - 22
+  );
+
+  /* add top bar */
+  memset(ptr, 0x23, SERVER.max_x-1 );
+  ptr += SERVER.max_x-1;
+
+  for ( i=0; i<SERVER.max_y-4; i++ ){
+    ptr += sprintf( ptr,
+      "\e[1B\e[%dD#\e[%dC#",  /*max len is 18 */
+			SERVER.max_x-1,
+			SERVER.max_x-3
+    );
+  }
+	/* new line and go back one more time */
+	ptr += sprintf( ptr,
+		"\e[1B\e[%dD",				/* maxlen 10 */
+		SERVER.max_x-1
+	);
+
+	/* bottom bar */
+  memset(ptr, 0x23, SERVER.max_x-1 );
+  ptr += SERVER.max_x-1;
+
+	/* null terminate */
+  ptr[0] = 0x00;
+
+  /* a little bit of "sanity" to go with this mess :) */
+	if (s_buff < (unsigned int) (ptr-buff))
+    server_log(FATAL, "%s [draw_board]  line:%d detected overflow!!!", __FILE__, __LINE__ );
+
+  write(p->fd, buff, (ssize_t) (ptr-buff));
+
+  #undef TMP_STR1
+  #undef TMP_STR2
 }
