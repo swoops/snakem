@@ -194,7 +194,7 @@ void move_snake(player *p){
 
   }else{ /* snake ate a pellet */
     grow_snake(p);
-    if ( serv_get_flags() & RANDOM_MODES  && random() % 100){
+    if ( serv_get_flags() & RANDOM_MODES  && random() % 100 == 0){
       int mods = serv_random_flags(); 
       if ( mods & ( ARROGANT_MODE | TRASH_MODE ) ){
         serv_notify_all(p->color, "MODS %s%s enabled, THANKS %s!", 
