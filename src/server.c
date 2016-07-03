@@ -14,6 +14,7 @@
 
 void init_server(){
   /* TODO: init from config file */
+  SERVER.flags         =  0;
   SERVER.max_y         =  0;
   SERVER.max_x         =  0;
   SERVER.port          =  0;

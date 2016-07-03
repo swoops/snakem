@@ -20,6 +20,10 @@
 #define TECHNO_TIAM 4  /*turn techno mode on/off*/
 
 
+#define ARROGANT_MODE 8
+#define TRASH_TIAM 16
+
+
 #define MAX_PLAYER_NAME 16 
 
 
@@ -27,7 +31,6 @@
 
 #define GO_HOME_STR "\e[H"
 #define CLEAR_SCREEN_STR "\e[2J"
-
 
 
 typedef struct {
@@ -38,6 +41,7 @@ typedef struct {
 /* everying in here is unique to each playser */
 typedef struct {
   char *name;                   /* username for the snake */
+  int nlen;                     /* username length */
   int *pix;                     /* pointer to int array of pixels */
   int head;                     /* index of head */
   size_t dir;                   /* direction of snake */
@@ -64,6 +68,7 @@ typedef struct {
   unsigned int high_score;
   struct sockaddr_in * addr;
   char * start_banner;
+  int flags;
   player ** players;            /* array of players NULL terminated */
   int max_players;              /* max number of players */
   int last_player;              /* index of last player */

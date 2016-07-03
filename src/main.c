@@ -44,10 +44,16 @@ int main(int argc, char *argv[]){
   int ch;
   init_server();
 
-  while ((ch = getopt (argc, argv, "hp:x:y:b:i:e:l:s:n:")) != -1){
+  while ((ch = getopt (argc, argv, "hp:x:y:b:i:e:l:s:n:at")) != -1){
     switch (ch) {
       case 'h':
         help_menu(argv[0], 0);
+        break;
+      case 'a':
+        SERVER.flags |= ARROGANT_MODE;
+        break;
+      case 't':
+        SERVER.flags |= TRASH_TIAM;
         break;
       case 'e':
         fprintf(stderr, "not implemented yet\n");

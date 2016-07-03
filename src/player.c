@@ -75,7 +75,10 @@ void destroy_player(player *p){
   else
     serv_notify_all("\e[38;5;%dm%s DIES with %d\e[0m ", p->color, p->name, p->score);
 
-  if ( p->name != NULL ) free(p->name);
+  if ( p->name == NULL ) 
+    server_log(FATAL, "%s line %d p->name == NULL", __FILE__, __LINE__);
+
+  free(p->name);
 
   server_log(INFO, "part2 destroying player %p", p);
   pthread_mutex_destroy(&p->lock);
@@ -123,11 +126,13 @@ int player_write(player *p, char *msg){
 int player_set_name(player *p){
   size_t len=0;
   p->name = (char *) malloc(MAX_PLAYER_NAME);
+
   if ( p->name == NULL ){
     server_log(ERROR, "[player_set_name] malloc() failed");
     player_write(p, "Sorry friend, got an error... try again later?\n");
     return 1;
   }
+
   player_write(p, "username: ");
   read(p->fd, p->name, MAX_PLAYER_NAME-1);
 
@@ -138,6 +143,7 @@ int player_set_name(player *p){
     server_log(INFO, "Invalid username");
     return 1;
   }
+
   if ((p->name = realloc(p->name, len)) == NULL){
     server_log(ERROR, "[player_set_name] realloc() failed");
     player_write(p,   "Sorry friend, got an error... try again later?\n");
@@ -154,6 +160,7 @@ int player_set_name(player *p){
   }
 
   /* you got here, all is well */
+  p->nlen = strlen(p->name);
   server_log(INFO, "New player %s", p->name);
   return 0;
 

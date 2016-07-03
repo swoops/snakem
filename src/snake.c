@@ -178,8 +178,12 @@ void move_snake(player *p){
      * pellot does not happen to be in the tail of the snake, else it will
      * disapear 
      */
-    if (taili != serv_get_pellet())
-      place_str( ptail.x, ptail.y, NULL,  " ");
+    if ( p->pix[taili] != serv_get_pellet()){
+      if ( SERVER.flags & TRASH_TIAM )
+        place_str( ptail.x, ptail.y, NULL,  "%c", p->name[head_num % p->nlen]);
+      else
+        place_str( ptail.x, ptail.y, NULL,  " ");
+    }
 
   }else{
     grow_snake(p);
@@ -188,7 +192,10 @@ void move_snake(player *p){
     if ( taili < 0 ) taili = taili + p->slen;
   }
 
-  place_str(phead.x, phead.y, NULL, "\e[48;5;%dm \e[0m", p->color);
+  if (SERVER.flags & ARROGANT_MODE)
+    place_str(phead.x, phead.y, NULL, "\e[48;5;%dm%c\e[0m", p->color, p->name[head_num % p->nlen]);
+  else
+    place_str(phead.x, phead.y, NULL, "\e[48;5;%dm \e[0m", p->color);
 
   /* update memory struct */
   p->head = taili;
