@@ -43,7 +43,7 @@ void destroy_player(player *p){
 
   /* snake is alive, kill it and exit thread */
   if ( ( p->flags & DEAD ) == 0 ){
-    server_log(INFO, "part1 destroying player %p", p);
+    server_log(INFO, "part1 destroying player %p:%s", p,p->name);
     pthread_mutex_lock(&p->lock);
     p->flags |= DEAD;
 
@@ -71,24 +71,25 @@ void destroy_player(player *p){
       p->score);
 
   if ( serv_check_highscore(p) )
-    serv_notify_all("\e[38;5;%dm%s HIGH SCORE got %d\e[0m ", p->color, p->name, p->score);
+    serv_notify_all(p->color, "%s HIGH SCORE got %d", p->name, p->score);
   else
-    serv_notify_all("\e[38;5;%dm%s DIES with %d\e[0m ", p->color, p->name, p->score);
+    serv_notify_all(p->color, "%s DIES with %d", p->name, p->score);
 
   if ( p->name == NULL ) 
     server_log(FATAL, "%s line %d p->name == NULL", __FILE__, __LINE__);
 
   free(p->name);
 
-  server_log(INFO, "part2 destroying player %p", p);
   pthread_mutex_destroy(&p->lock);
 
-  serv_del_player(p);
+  /* delete player from server list */
+  if ( serv_del_player(p) == -1 && serv_get_flags() & RANDOM_MODES  )
+    serv_unset_flags( TRASH_MODE | ARROGANT_MODE);
+
+  server_log(INFO, "part2 destroying player %p:%s done", p,p->name);
   close(p->fd);
   free(p->pix);
   free(p);
-
-  server_log(INFO, "snake is completely cleaned up");
 
   pthread_exit(0);
 }
@@ -99,15 +100,19 @@ size_t player_term_string(char *s){
   char ch;
   for (i=0; i<MAX_PLAYER_NAME; i++){
     ch = s[i];
-    /* server_log(INFO, "[player_term_string] checking character %02x", ch & 0xff); */
     if (ch == 0x0d || ch == 0x00) break;
 
     if ( ch >= (int) *"a" && ch <= (int) *"z" ) continue; /* a-z fine*/
     if ( ch >= (int) *"A" && ch <= (int) *"Z" ) continue; /* A-Z fine*/
     if ( ch >= (int) *"0" && ch <= (int)* "9" ) continue; /* 0-9 fine*/
+    if ( ch == (int) *"0" )                     continue; /* " " fine*/
 
-    server_log(INFO, "[player_term_string] invalid char %02x", ch & 0xff);
-    s[0] = 0x00;
+    s[i] = 0x00;
+    if ( i > 0 )
+      server_log(INFO, "[player_term_string] invalid char %02x, got to %s", ch & 0xff);
+    else
+      server_log(INFO, "[player_term_string] invalid first char %02x", ch & 0xff);
+    s[0] = 0x00; /* just in case :) */
     return 0;
   }
   len = i;
@@ -140,7 +145,6 @@ int player_set_name(player *p){
 
   if ( len == 0 ){
     player_write(p, "Invalide username");
-    server_log(INFO, "Invalid username");
     return 1;
   }
 
@@ -161,7 +165,9 @@ int player_set_name(player *p){
 
   /* you got here, all is well */
   p->nlen = strlen(p->name);
-  server_log(INFO, "New player %s", p->name);
+  server_log(INFO, "New Player %s (%p) %s:%d ", p->name, p, 
+    p, inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port)
+  );
   return 0;
 
   its_a_bot: { /* lets get ask him what his favoirt password is */

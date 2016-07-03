@@ -17,7 +17,7 @@ void init_server(){
   SERVER.flags         =  0;
   SERVER.max_y         =  0;
   SERVER.max_x         =  0;
-  SERVER.port          =  0;
+  SERVER.port          =  4444;
   SERVER.high_score    =  0;
   SERVER.t_inc         =  1000;
   SERVER.log           =  stderr;
@@ -80,10 +80,10 @@ int serv_del_player(player *p){
   if ( SERVER.last_player  == -1 ){
     server_log(INFO, "[serv_del_player] Can't del a player, no players to delet");
     serv_unlock();
-    return 1;
+    return -2;
   }
 
-  int i;
+  int i, ret;
   player *c;
 
   for (i=0; i<=SERVER.last_player; i++){
@@ -103,8 +103,10 @@ int serv_del_player(player *p){
   if ( i-2 != SERVER.last_player-- ){
     server_log(FATAL, "[serv_del_player] SANITY: player list corrupted");
   }
+
+  ret = SERVER.last_player;
   serv_unlock();
-  return 0;
+  return ret;
 }
 
 int serv_add_player(player *p){
@@ -143,15 +145,6 @@ int serv_check_highscore(player *p){
   serv_unlock();
   return flag;
 }
-
-int serv_get_highscore(){
-  int ret;
-  serv_lock();
-  ret =  SERVER.high_score;
-  serv_unlock();
-
-  return ret;
-}
 int serv_full(){
   int ret = 0;
   serv_lock();
@@ -180,6 +173,84 @@ void serv_put_pellet(player *p){
   place_str( pellet.x, pellet.y, p, "\e[38;5;0;48;5;46m*\e[0m");
 }
 
+int serv_random_flags(){
+  serv_lock();
+  int i = ( random() & ( TRASH_MODE | ARROGANT_MODE ) ) | RANDOM_MODES ;
+  server_log(INFO, "[serv_random_flags] flags set %s%s%s", 
+    (TRASH_MODE & i)    ?  "TRASH_MODE "    : "",
+    (ARROGANT_MODE & i) ?  "ARROGANT_MODE " : "",
+    (RANDOM_MODES & i)  ?  "RANDOM_MODES "  : ""
+  );
+  SERVER.flags = i;
+  serv_unlock();
+  return i;
+}
+
+void serv_unset_flags(int flags){
+  serv_lock();
+  SERVER.flags ^= flags;
+  serv_unlock();
+}
+
+void serv_notify_all(int color, char *fmt, ...) {
+  /* 
+   * BE CAREFULL CHANGING THIS FUNCTION !!!
+   *           it is stupid
+  */
+
+  #define TMP_CLOSE_STR "\e[0m"
+  int i;
+  int max_str = sizeof(CLEAR_LINE_STR) + 9 + 1 + 11   /* clear line, home, move down, space,  and color */
+              + SERVER.max_x + 64             /* width of screen, plus some room for encoding ie: vsnprintf */
+              + sizeof(TMP_CLOSE_STR)         /* end encoding */
+              + 1;                            /* null of course */
+  char buff[max_str];
+  va_list ap;
+
+  if ( color <= 17 && color >= 231 )
+    color = 10;  /* GREEN like a term should be!!!! */
+
+  i = snprintf(buff, max_str, "\e[H\e[%dB%s \e[38;5;%dm", SERVER.max_y, CLEAR_LINE_STR, color);
+
+  va_start(ap, fmt);
+  /* leave room for the closing string */
+  i += vsnprintf(buff+i, max_str-i-sizeof(TMP_CLOSE_STR), fmt, ap);
+  va_end(ap);
+
+  /* sanity, should not be == b/c need room for NULL */
+  if ( i+sizeof(TMP_CLOSE_STR) >= max_str  )
+    server_log(FATAL, "%s [serv_notify_all]  line: %d BUFFER OVERFLOW DETECTED!!!", __FILE__, __LINE__ );
+
+  i += snprintf(buff+i, max_str-i-sizeof(TMP_CLOSE_STR), "\e[0m");
+  /* server_log(INFO, "[serv_notify_all] sending %d chars to all players, buff size is %d", i, max_str); */
+  serv_write(buff);
+}
+
+/* server GETs */
+/* TODO: abstractt his to one function */
+int serv_get_highscore(){
+  int ret;
+  serv_lock();
+  ret =  SERVER.high_score;
+  serv_unlock();
+
+  return ret;
+}
+int serv_get_flags(){
+  int ret;
+  serv_lock();
+  ret = SERVER.flags;
+  serv_unlock();
+  return ret;
+}
+int serv_get_num_players(){
+  int ret;
+  serv_lock();
+  ret = SERVER.last_player +1;
+  serv_unlock();
+  return ret;
+}
+
 int serv_get_pellet(){
   int pellet;
   serv_lock();
@@ -188,40 +259,3 @@ int serv_get_pellet(){
   return pellet;
 }
 
-int serv_get_num_players(){
-  int ret;
-  serv_lock();
-  ret = SERVER.last_player +1;
-  serv_unlock();
-  return ret;
-}
-void serv_random_flags(){
-  int i = ( random() & ( TRASH_MODE | ARROGANT_MODE ) ) | RANDOM_MODES ;
-  server_log(INFO, "[serv_random_flags] flags set %s%s%s", 
-    (TRASH_MODE & i)    ?  "TRASH_MODE "    : "",
-    (ARROGANT_MODE & i) ?  "ARROGANT_MODE " : "",
-    (RANDOM_MODES & i)  ?  "RANDOM_MODES "  : ""
-  );
-  SERVER.flags = i;
-}
-
-void serv_notify_all(char *fmt, ...) {
-  int i;
-  int max_str = SERVER.max_x +17;
-  char buff[max_str];
-
-  va_list ap;
-  va_start(ap, fmt);
-  vsnprintf(buff, max_str, fmt, ap);
-  va_end(ap);
-
-  serv_lock();
-  for (i=0; i<=SERVER.last_player; i++){
-    pthread_mutex_lock(&SERVER.players[i]->lock);
-    if ( ( SERVER.players[i]->flags & DEAD ) == 0 )
-      place_str(2, SERVER.max_y+2, SERVER.players[i], "%s", buff);
-    pthread_mutex_unlock(&SERVER.players[i]->lock);
-  }
-  serv_unlock();
-
-}

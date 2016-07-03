@@ -4,7 +4,7 @@
 #include  "snake.h"
 #include  "data_types.h"
 #include  <unistd.h>      /*getopt*/
-#include  <string.h>     /*memset*/
+#include  <string.h>      /*memset*/
 #include  <arpa/inet.h>   /*htons*/
 #include  <signal.h>      /*sigemptyset,sigaction*/
 #include  <sys/socket.h>
@@ -29,7 +29,8 @@ void help_menu(char *p, int x){
   fprintf(stderr, "%s: [-x <width> ] [ -y <height> ] \n\n", p);
   fprintf(stderr, "\t-x: \ttotal width of board (default: 50)\n");
   fprintf(stderr, "\t-y: \ttotal height of board (default: width)\n");
-  fprintf(stderr, "\t-l: \tlog file\n");
+  fprintf(stderr, "\t-p: \tport to listen on (default 4444)\n");
+  fprintf(stderr, "\t-l: \tlog file (default stderr)\n");
   fprintf(stderr, "\t-i: \tspeed increase for pellots (default 1000)\n");
   fprintf(stderr, "\t-s: \tHigh Score to start with... better logging later :)\n");
   fprintf(stderr, "\t-n: \tName of player with high score (default Nobody)\n");
@@ -120,13 +121,13 @@ int main(int argc, char *argv[]){
 
 
   if ( SERVER.max_x == 0 || SERVER.max_x < 10 )
-    SERVER.max_x =  50;
+    SERVER.max_x =  80;
   if ( SERVER.max_y == 0 || SERVER.max_y < 10 )
     SERVER.max_y =  SERVER.max_x/2;
 
   serv_put_pellet(NULL);  /* initialize pellet position after bounds set*/
 
-  if ( SERVER.port == 0 ) server_log(FATAL, "Need a port to bind on");
+  if ( SERVER.port == 0 ) server_log(FATAL, "0 is not a good port friend");
 
   struct sockaddr_in host_addr, client_addr;
   int sockfd, new_sockfd;  // Listen on sock_fd, new connection on new_fd
@@ -156,11 +157,6 @@ int main(int argc, char *argv[]){
   while(1) {
     /* if server is full don't go taking more connections... */
     while( serv_full() ) sleep(1);
-
-    if ( serv_get_num_players() == 0 && ( SERVER.flags & RANDOM_MODES ) )
-      serv_random_flags();
-    else
-      server_log(INFO, "Number of players is %d", serv_get_num_players());
 
     sin_size = sizeof(struct sockaddr_in);
     new_sockfd = accept(sockfd, (struct sockaddr *)&client_addr, &sin_size);

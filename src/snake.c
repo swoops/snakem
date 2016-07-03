@@ -71,6 +71,16 @@ int progress_game(player *p){
   if (player_set_name(p))
     destroy_player(p);
 
+
+  if ( serv_get_flags() & RANDOM_MODES &&  serv_get_flags() & ( TRASH_MODE | ARROGANT_MODE )  ){
+      serv_unset_flags( TRASH_MODE | ARROGANT_MODE);
+      serv_notify_all(p->color, "SHHhhh!!! %s is joining, no more fun", p->name);
+  }else{
+      serv_notify_all(p->color, "%s Joined\e[00m", p->name);
+  }
+
+  p->flags &= ( (int) -1 ) ^ DEAD; 
+
   if ( pthread_create(&p->tid_controll, NULL, (void *) &snake_control, p) != 0 )
       server_log(FATAL, "Could not start control thread");
 
@@ -83,9 +93,6 @@ int progress_game(player *p){
     "\xff\xfd\x22" /* IAC DO LINEMODE*/
     "\xff\xfb\x01" /* IAC WILL ECHO */
   ); 
-  serv_notify_all("\e[38;5;%dm%s Joined\e[00m", p->color, p->name);
-
-  p->flags &= ( (int) -1 ) ^ DEAD; 
 
   clear_screen(p);
   if ( SERVER.start_banner  && ! write_file(SERVER.start_banner , p) ){
@@ -174,20 +181,31 @@ void move_snake(player *p){
     }
 
     /* 
-     * collisions done, remove old tail because no pellot but only if the
-     * pellot does not happen to be in the tail of the snake, else it will
+     * collisions done, remove old tail because no pellet but only if the
+     * pellet does not happen to be in the tail of the snake, else it will
      * disapear 
      */
     if ( p->pix[taili] != serv_get_pellet()){
-      if ( SERVER.flags & TRASH_MODE )
+      if ( serv_get_flags() & TRASH_MODE )
         place_str( ptail.x, ptail.y, NULL,  "%c", p->name[head_num % p->nlen]);
       else
         place_str( ptail.x, ptail.y, NULL,  " ");
     }
 
-  }else{
+  }else{ /* snake ate a pellet */
     grow_snake(p);
+    if ( serv_get_flags() & RANDOM_MODES  && random() % 100){
+      int mods = serv_random_flags(); 
+      if ( mods & ( ARROGANT_MODE | TRASH_MODE ) ){
+        serv_notify_all(p->color, "MODS %s%s enabled, THANKS %s!", 
+              (TRASH_MODE & mods)    ?   "TRASH "    : "",
+              (ARROGANT_MODE & mods) ?  "ARROGANT " : "",
+              p->name
+            );
+      }
+    }
     serv_put_pellet(NULL);
+
     taili = p->head-1;
     if ( taili < 0 ) taili = taili + p->slen;
   }

@@ -31,6 +31,7 @@
 
 #define GO_HOME_STR "\e[H"
 #define CLEAR_SCREEN_STR "\e[2J"
+#define CLEAR_LINE_STR "\e[2K"
 
 
 typedef struct {
