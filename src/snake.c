@@ -71,8 +71,6 @@ int progress_game(player *p){
   if (player_set_name(p))
     destroy_player(p);
 
-  p->flags &= ( (int) -1 ) ^ DEAD; 
-
   if ( pthread_create(&p->tid_controll, NULL, (void *) &snake_control, p) != 0 )
       server_log(FATAL, "Could not start control thread");
 
@@ -86,8 +84,10 @@ int progress_game(player *p){
     "\xff\xfb\x01" /* IAC WILL ECHO */
   ); 
   serv_notify_all("\e[38;5;%dm%s Joined\e[00m", p->color, p->name);
-  clear_screen(p);
 
+  p->flags &= ( (int) -1 ) ^ DEAD; 
+
+  clear_screen(p);
   if ( SERVER.start_banner  && ! write_file(SERVER.start_banner , p) ){
       usleep(5000000);
       clear_screen(p);

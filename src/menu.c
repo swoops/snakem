@@ -8,14 +8,14 @@
 #include  "server.h"
 
 void show_score(player *p){
-  char buff[128];
+  char buff[40+MAX_PLAYER_NAME];
 
   serv_lock();
   if ( SERVER.hs_name == NULL )
     server_log(FATAL, "%s [show_score]  line:%d should not have NULL highscore name", __FILE__, __LINE__ );
 
   snprintf(buff, sizeof(buff), 
-      "\e[H\e[1B\e[2K%8u\e[%zuC%s:%8u",
+      "\e[H\e[1B\e[2K%8u\e[%zuC%s:%8u\e[H",
       p->score, 
       (size_t) SERVER.max_x - 17 - strlen(SERVER.hs_name), 
       SERVER.hs_name, SERVER.high_score
