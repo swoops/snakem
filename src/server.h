@@ -1,3 +1,5 @@
+int serv_get_num_players();
+void serv_random_flags();
 void serv_notify_all(char *fmt, ...);
 int serv_full();
 int serv_get_pellet();

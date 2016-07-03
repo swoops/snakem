@@ -179,7 +179,7 @@ void move_snake(player *p){
      * disapear 
      */
     if ( p->pix[taili] != serv_get_pellet()){
-      if ( SERVER.flags & TRASH_TIAM )
+      if ( SERVER.flags & TRASH_MODE )
         place_str( ptail.x, ptail.y, NULL,  "%c", p->name[head_num % p->nlen]);
       else
         place_str( ptail.x, ptail.y, NULL,  " ");

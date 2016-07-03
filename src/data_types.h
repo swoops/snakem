@@ -17,11 +17,11 @@
 /* for snake flags */
 #define DEAD 1    /* snake is dead, clean him off the road */
 #define KILL 2    /* snake is dead, clean him off the road */
-#define TECHNO_TIAM 4  /*turn techno mode on/off*/
 
 
-#define ARROGANT_MODE 8
-#define TRASH_TIAM 16
+#define ARROGANT_MODE    4
+#define TRASH_MODE       8
+#define RANDOM_MODES    16
 
 
 #define MAX_PLAYER_NAME 16 

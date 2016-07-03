@@ -44,7 +44,7 @@ int main(int argc, char *argv[]){
   int ch;
   init_server();
 
-  while ((ch = getopt (argc, argv, "hp:x:y:b:i:e:l:s:n:at")) != -1){
+  while ((ch = getopt (argc, argv, "hp:x:y:b:i:e:l:s:n:atr")) != -1){
     switch (ch) {
       case 'h':
         help_menu(argv[0], 0);
@@ -52,8 +52,11 @@ int main(int argc, char *argv[]){
       case 'a':
         SERVER.flags |= ARROGANT_MODE;
         break;
+      case 'r':
+        SERVER.flags |= RANDOM_MODES;
+        break;
       case 't':
-        SERVER.flags |= TRASH_TIAM;
+        SERVER.flags |= TRASH_MODE;
         break;
       case 'e':
         fprintf(stderr, "not implemented yet\n");
@@ -153,6 +156,11 @@ int main(int argc, char *argv[]){
   while(1) {
     /* if server is full don't go taking more connections... */
     while( serv_full() ) sleep(1);
+
+    if ( serv_get_num_players() == 0 && ( SERVER.flags & RANDOM_MODES ) )
+      serv_random_flags();
+    else
+      server_log(INFO, "Number of players is %d", serv_get_num_players());
 
     sin_size = sizeof(struct sockaddr_in);
     new_sockfd = accept(sockfd, (struct sockaddr *)&client_addr, &sin_size);

@@ -188,6 +188,23 @@ int serv_get_pellet(){
   return pellet;
 }
 
+int serv_get_num_players(){
+  int ret;
+  serv_lock();
+  ret = SERVER.last_player +1;
+  serv_unlock();
+  return ret;
+}
+void serv_random_flags(){
+  int i = ( random() & ( TRASH_MODE | ARROGANT_MODE ) ) | RANDOM_MODES ;
+  server_log(INFO, "[serv_random_flags] flags set %s%s%s", 
+    (TRASH_MODE & i)    ?  "TRASH_MODE "    : "",
+    (ARROGANT_MODE & i) ?  "ARROGANT_MODE " : "",
+    (RANDOM_MODES & i)  ?  "RANDOM_MODES "  : ""
+  );
+  SERVER.flags = i;
+}
+
 void serv_notify_all(char *fmt, ...) {
   int i;
   int max_str = SERVER.max_x +17;
