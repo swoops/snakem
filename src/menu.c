@@ -107,13 +107,15 @@ void draw_board(player *p){
 						  + 1;																			 /* Null terminate */
 
   char buff[s_buff];
-  char *ptr = buff;
+  char *ptr;
 
   /* SCORE PART */
-  ptr += sprintf( ptr,
+  sprintf( buff,
       TMP_STR1 "%d" TMP_STR2,
       SERVER.max_x - 22
   );
+
+  ptr = buff + strlen(buff);
 
   /* add top bar */
   memset(ptr, 0x23, SERVER.max_x-1 );
@@ -127,10 +129,12 @@ void draw_board(player *p){
     );
   }
 	/* new line and go back one more time */
-	ptr += sprintf( ptr,
+	sprintf( ptr,
 		"\e[1B\e[%dD",				/* maxlen 10 */
 		SERVER.max_x-1
 	);
+
+  ptr = buff + strlen(buff);
 
 	/* bottom bar */
   memset(ptr, 0x23, SERVER.max_x-1 );

@@ -198,7 +198,7 @@ void serv_notify_all(int color, char *fmt, ...) {
    *           it is stupid
   */
 
-  #define TMP_CLOSE_STR "\e[0m"
+  #define TMP_CLOSE_STR "\e[00m"
   int i;
   int max_str = sizeof(CLEAR_LINE_STR) + 9 + 1 + 11   /* clear line, home, move down, space,  and color */
               + SERVER.max_x + 64             /* width of screen, plus some room for encoding ie: vsnprintf */
@@ -210,20 +210,30 @@ void serv_notify_all(int color, char *fmt, ...) {
   if ( color <= 17 && color >= 231 )
     color = 10;  /* GREEN like a term should be!!!! */
 
-  i = snprintf(buff, max_str, "\e[H\e[%dB%s \e[38;5;%dm", SERVER.max_y, CLEAR_LINE_STR, color);
+  snprintf(buff, max_str, "\e[H\e[%dB%s \e[38;5;%dm", SERVER.max_y, CLEAR_LINE_STR, color);
+
+  /* don't trust snprintf return value... it is just safer that way */
+  i = strlen(buff);
 
   va_start(ap, fmt);
   /* leave room for the closing string */
-  i += vsnprintf(buff+i, max_str-i-sizeof(TMP_CLOSE_STR), fmt, ap);
+  vsnprintf(buff+i, max_str-i-sizeof(TMP_CLOSE_STR)-1, fmt, ap);
   va_end(ap);
+
+  i = strlen(buff);
 
   /* sanity, should not be == b/c need room for NULL */
   if ( i+sizeof(TMP_CLOSE_STR) >= max_str  )
-    server_log(FATAL, "%s [serv_notify_all]  line: %d BUFFER OVERFLOW DETECTED!!!", __FILE__, __LINE__ );
-
-  i += snprintf(buff+i, max_str-i-sizeof(TMP_CLOSE_STR), "\e[0m");
-  /* server_log(INFO, "[serv_notify_all] sending %d chars to all players, buff size is %d", i, max_str); */
+    server_log(FATAL, 
+      "%s [serv_notify_all]  line: %d BUFFER OVERFLOW DETECTED!!!"
+      "\n\ti:                     %d"
+      "\n\tsizeof(TMp_CLOSE_STR): %d"
+      "\n\tmax_str:               %d"
+      , __FILE__, __LINE__,i, sizeof(TMP_CLOSE_STR), max_str 
+    );
+  snprintf(buff+i, max_str-i, TMP_CLOSE_STR);
   serv_write(buff);
+  #undef TMP_CLOSE_STR
 }
 
 /* server GETs */
