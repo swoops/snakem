@@ -165,7 +165,7 @@ int player_set_name(player *p){
 
   /* you got here, all is well */
   p->nlen = strlen(p->name);
-  server_log(INFO, "New Player %s (%p) %s:%d ", p->name, p, 
+  server_log(INFO, "New Player %s (%p) %s:%d ", p->name, 
     p, inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port)
   );
   return 0;
