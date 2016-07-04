@@ -1,7 +1,7 @@
 snakem
 
 * About
-  Multi player telent snake game!!!
+  Multi player telnet snake game!!!
 
 * Compile
   run make to compile
@@ -16,6 +16,8 @@ snakem
   	$ telnet 127.0.0.1 4444
 
 TODO:
+  usernames fail on port 23 because telnet automatics sends IAC stuff, so add
+	  acceptance for those characters
   faster collision detection with taxi cab distance
   snakes hit each other
   handle ctrl+c to clean up sockets nicely...
@@ -29,3 +31,9 @@ TODO:
     - speed
   add mod nag
   add annoying banner to README
+
+Warranty:
+  There is none, this may not work or may cause your system to get hacked.
+  That said, I want the code to be good so if you find problems in it please
+  let me know and I will fix them.
+

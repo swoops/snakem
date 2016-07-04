@@ -81,7 +81,6 @@ void destroy_player(player *p){
     server_log(FATAL, "%s line %d p->name == NULL", __FILE__, __LINE__);
   
 
-  free(p->name);
 
   pthread_mutex_destroy(&p->lock);
 
@@ -90,6 +89,8 @@ void destroy_player(player *p){
     serv_unset_flags( TRASH_MODE | ARROGANT_MODE);
 
   server_log(INFO, "part2 destroying player %p:%s done", p,p->name);
+
+  free(p->name);
   close(p->fd);
   free(p->pix);
   free(p);
@@ -112,10 +113,11 @@ size_t player_term_string(char *s){
 
     s[i] = 0x00;
     if ( i > 0 )
-      server_log(INFO, "[player_term_string] invalid char %02x, got to %s", ch & 0xff);
+      server_log(INFO, "[player_term_string] invalid char %02x, got to %s", ch & 0xff, s);
     else
       server_log(INFO, "[player_term_string] invalid first char %02x", ch & 0xff);
     s[0] = 0x00; /* just in case :) */
+    server_log(INFO, "[player_term_string] str now %s", s);
     return 0;
   }
   len = i;
