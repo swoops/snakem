@@ -17,6 +17,8 @@
 /* for snake flags */
 #define DEAD 1    /* snake is dead, clean him off the road */
 #define KILL 2    /* snake is dead, clean him off the road */
+#define BOT  4    /* this player is a bot trying to log in */
+
 
 
 #define ARROGANT_MODE    4

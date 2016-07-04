@@ -70,13 +70,16 @@ void destroy_player(player *p){
       inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), 
       p->score);
 
-  if ( serv_check_highscore(p) )
-    serv_notify_all(p->color, "%s HIGH SCORE got %d", p->name, p->score);
-  else
-    serv_notify_all(p->color, "%s DIES with %d", p->name, p->score);
-
+  if ( p->flags && BOT == 0 ){
+    if ( serv_check_highscore(p) )
+      serv_notify_all(p->color, "NEW HIGH SCORE %s: %d", p->name, p->score);
+    else
+      serv_notify_all(p->color, "%s DIES with %d", p->name, p->score);
+  }
+    
   if ( p->name == NULL ) 
     server_log(FATAL, "%s line %d p->name == NULL", __FILE__, __LINE__);
+  
 
   free(p->name);
 
@@ -179,7 +182,13 @@ int player_set_name(player *p){
       player_write(p, "Go away jerk, you did not even cry at bambi\n");
       server_log(INFO, "Player %p %s:%d attempted to \"log in\" with creds (%s:%s)", 
         p, inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port),
-        p->name, buff);
+        p->name, buff
+      );
+      p->flags |= BOT;
+      serv_notify_all(88, "lol %s tried to login as (%s:%s)",
+        inet_ntoa(p->addr->sin_addr), 
+        p->name, buff
+      );
       return 1;
   }
 }
