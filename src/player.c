@@ -86,7 +86,7 @@ void destroy_player(player *p){
 
   /* delete player from server list */
   if ( serv_del_player(p) == -1 && serv_get_flags() & RANDOM_MODES  )
-    serv_unset_flags( TRASH_MODE | ARROGANT_MODE);
+    serv_set_flags( RANDOM_MODES );
 
   server_log(INFO, "part2 destroying player %p:%s done", p,p->name);
 
@@ -102,6 +102,7 @@ size_t player_term_string(char *s){
   size_t len;
   int i;
   char ch;
+
   for (i=0; i<MAX_PLAYER_NAME; i++){
     ch = s[i];
     if (ch == 0x0d || ch == 0x00) break;
@@ -111,11 +112,11 @@ size_t player_term_string(char *s){
     if ( ch >= (int) *"0" && ch <= (int)* "9" ) continue; /* 0-9 fine*/
     if ( ch == (int) *"0" )                     continue; /* " " fine*/
 
-    s[i] = 0x00;
     if ( i > 0 )
       server_log(INFO, "[player_term_string] invalid char %02x, got to %s", ch & 0xff, s);
     else
       server_log(INFO, "[player_term_string] invalid first char %02x", ch & 0xff);
+    hexdump(s);
     s[0] = 0x00; /* just in case :) */
     return 0;
   }
@@ -144,6 +145,13 @@ int player_set_name(player *p){
 
   player_write(p, "username: ");
   read(p->fd, p->name, MAX_PLAYER_NAME-1);
+  if ( strcmp(p->name, "\xff\xfd\x03\xff\xfb\x18\xff\xfb\x1f\xff\xfb\x20\xff\xfb\x21") == 0 ){
+    read(p->fd, p->name, MAX_PLAYER_NAME-1);
+    if ( strcmp(p->name, "\xff\xfb\x22\xff\xfb\x27\xff\xfd\x05\xff\xfb\x23\xff\xfb\x21") == 0 ){
+      server_log(INFO, "[player_set_name] player %p is using a real telnet client!", p);
+			read(p->fd, p->name, MAX_PLAYER_NAME-1);
+		}
+  }
 
   len = player_term_string(p->name);
 
@@ -161,10 +169,14 @@ int player_set_name(player *p){
   /* dumb bot trying to get lucky... I am not that type of game! */
   if ( len > 4 ){
     if (len == 6 && strcmp("nobody",  p->name) == 0) goto its_a_bot;
-    if (len == 5 && strcmp("admin", p->name) == 0) goto its_a_bot;
+    if (len == 5 && strcmp("admin", p->name) == 0)   goto its_a_bot;
+    if (len == 5 && strcmp("guest", p->name) == 0)   goto its_a_bot;
+    if (len == 7 && strcmp("support", p->name) == 0)   goto its_a_bot;
+
   }else{
-    if (len == 4 && strcmp("root",  p->name) == 0) goto its_a_bot;
-    if (len == 2 && strcmp("sa",    p->name) == 0) goto its_a_bot;
+    if (len == 4 && strcmp("ubnt",  p->name) == 0)   goto its_a_bot;
+    if (len == 4 && strcmp("root",  p->name) == 0)   goto its_a_bot;
+    if (len == 2 && strcmp("sa",    p->name) == 0)   goto its_a_bot;
   }
 
   /* you got here, all is well */

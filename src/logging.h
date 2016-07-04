@@ -6,3 +6,4 @@
  * log stuff
 */
 void server_log(int flags, char *fmt, ...);
+void hexdump(char *str);

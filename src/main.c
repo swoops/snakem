@@ -51,7 +51,7 @@ int main(int argc, char *argv[]){
         help_menu(argv[0], 0);
         break;
       case 'a':
-        SERVER.flags |= ARROGANT_MODE;
+        SERVER.flags |= ANON_MODE;
         break;
       case 'r':
         SERVER.flags |= RANDOM_MODES;

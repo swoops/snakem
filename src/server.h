@@ -10,7 +10,7 @@ int serv_add_player(player *p);
 int serv_check_highscore(player *p);
 
 int serv_random_flags();
-void serv_unset_flags(int flags);
+void serv_set_flags(int flags);
 
 /* server gets */
 int serv_get_highscore();

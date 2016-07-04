@@ -21,9 +21,10 @@
 
 
 
-#define ARROGANT_MODE    4
+#define ANON_MODE        4
 #define TRASH_MODE       8
 #define RANDOM_MODES    16
+#define ALL_MODES ( ANON_MODE | TRASH_MODE )
 
 
 #define MAX_PLAYER_NAME 16 

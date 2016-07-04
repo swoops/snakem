@@ -175,10 +175,10 @@ void serv_put_pellet(player *p){
 
 int serv_random_flags(){
   serv_lock();
-  int i = ( random() & ( TRASH_MODE | ARROGANT_MODE ) ) | RANDOM_MODES ;
+  int i =  ( ( random() & ALL_MODES )  | RANDOM_MODES ) ;
   server_log(INFO, "[serv_random_flags] flags set %s%s%s", 
     (TRASH_MODE & i)    ?  "TRASH_MODE "    : "",
-    (ARROGANT_MODE & i) ?  "ARROGANT_MODE " : "",
+    (ANON_MODE & i)     ?  "ANON_MODE "     : "",
     (RANDOM_MODES & i)  ?  "RANDOM_MODES "  : ""
   );
   SERVER.flags = i;
@@ -186,9 +186,9 @@ int serv_random_flags(){
   return i;
 }
 
-void serv_unset_flags(int flags){
+void serv_set_flags(int flags){
   serv_lock();
-  SERVER.flags ^= flags;
+  SERVER.flags = flags;
   serv_unlock();
 }
 

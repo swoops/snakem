@@ -54,3 +54,43 @@ void server_log(int flag, char *fmt, ...) {
   if ( flag & FATAL ) exit(errno ? errno : -1);
 
 }
+
+void hexdump(char *str){
+  int i;
+  int len = strlen(str);
+  char buff1[3*16+1+5];
+  char buff2[17];
+  char *ptr = buff1;
+
+  server_log(INFO, "HEXDUMP size: %d", len);
+  
+  for (i=0; i<len; i++){
+    if ( i!=0 && i%16 == 0 ){
+      server_log(INFO, "%s\t%s", buff1, buff2);
+      buff1[0] = 0x00;
+      ptr = buff1;
+    }
+
+    /* ascii stuff */
+    if ( 
+    ( str[i] >= (int) *"a" && str[i] <= (int) *"z" )  ||
+    ( str[i] >= (int) *"A" && str[i] <= (int) *"Z" )  ||
+    ( str[i] == (int) *"[" || str[i] == (int) *"]" )  ||
+    ( str[i] >= (int) *"0" && str[i] <= (int)* "9" )  ){ 
+      buff2[i%16] = str[i];
+    }else{
+      buff2[i%16] = *".";
+    }
+    buff2[(i%16)+1] = 0x00;
+
+    sprintf(ptr, "%02x ", str[i] & 0xff);
+    ptr+=3;
+
+  }
+
+
+  if ( i%16 != 0 )
+      server_log(INFO, "%s\t%s", buff1, buff2);
+
+}
+

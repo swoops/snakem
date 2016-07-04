@@ -96,26 +96,31 @@ void winner(player *p){
 }
 
 void draw_board(player *p){
-  #define TMP_STR1 "\e[H\e[2K Your Score\e["
+  #define TMP_STR1 "Your Score\e["
   #define TMP_STR2 "CHIGH SCORE\e[H\e[2B "
   int i;
-  int s_buff  = sizeof(TMP_STR1) + 3 + sizeof(TMP_STR2)  /* SCIRE: string + shift right ammount + string + home+down2 */
+  int s_buff  = 20                                       /* snake color */
+              + sizeof(TMP_STR1) + 3 + sizeof(TMP_STR2)  /* SCIRE: string + shift right ammount + string + home+down2 */
               + SERVER.max_x - 1												 /* first bar (easy) */
 						  + (SERVER.max_y-4) * 18									   /* sides: max_len  * height */      
 						  + 10																			 /* one more newline backup */
               + SERVER.max_x - 1												 /* second bar (easy) */
-						  + 1;																			 /* Null terminate */
+						  + 1 + 1;																	 /* close color + Null terminate */
 
   char buff[s_buff];
-  char *ptr;
+  char *ptr = buff;
+
+  /* color */
+  ptr += sprintf( buff, "\e[H\e[2K \e[38;5;%dm",
+      p->color
+  );
+
 
   /* SCORE PART */
-  sprintf( buff,
+  ptr += sprintf( ptr,
       TMP_STR1 "%d" TMP_STR2,
       SERVER.max_x - 22
   );
-
-  ptr = buff + strlen(buff);
 
   /* add top bar */
   memset(ptr, 0x23, SERVER.max_x-1 );
@@ -129,24 +134,25 @@ void draw_board(player *p){
     );
   }
 	/* new line and go back one more time */
-	sprintf( ptr,
+	ptr += sprintf( ptr,
 		"\e[1B\e[%dD",				/* maxlen 10 */
 		SERVER.max_x-1
 	);
-
-  ptr = buff + strlen(buff);
 
 	/* bottom bar */
   memset(ptr, 0x23, SERVER.max_x-1 );
   ptr += SERVER.max_x-1;
 
-	/* null terminate */
-  ptr[0] = 0x00;
+
+  /* close colors */
+	ptr += sprintf( ptr, "\e[00m");
+
 
   /* a little bit of "sanity" to go with this mess :) */
 	if (s_buff < (unsigned int) (ptr-buff))
     server_log(FATAL, "%s [draw_board]  line:%d detected overflow!!!", __FILE__, __LINE__ );
 
+  server_log(INFO, "size: %d", (int) ( ptr-buff));
   write(p->fd, buff, (ssize_t) (ptr-buff));
 
   #undef TMP_STR1

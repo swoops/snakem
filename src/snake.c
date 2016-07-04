@@ -72,11 +72,19 @@ int progress_game(player *p){
     destroy_player(p);
 
 
-  if ( serv_get_flags() & RANDOM_MODES &&  serv_get_flags() & ( TRASH_MODE | ARROGANT_MODE )  ){
-      serv_unset_flags( TRASH_MODE | ARROGANT_MODE);
+  if ( serv_get_flags() & RANDOM_MODES &&  serv_get_flags() & ALL_MODES  ){
+      serv_set_flags( RANDOM_MODES );
       serv_notify_all(p->color, "SHHhhh!!! %s is joining, no more fun", p->name);
   }else{
       serv_notify_all(p->color, "%s Joined\e[00m", p->name);
+  }
+
+
+  clear_screen(p);
+  go_home_cursor(p);
+  if ( SERVER.start_banner  && ! write_file(SERVER.start_banner , p) ){
+      usleep(5000000);
+      clear_screen(p);
   }
 
   p->flags &= ( (int) -1 ) ^ DEAD; 
@@ -94,11 +102,6 @@ int progress_game(player *p){
     "\xff\xfb\x01" /* IAC WILL ECHO */
   ); 
 
-  clear_screen(p);
-  if ( SERVER.start_banner  && ! write_file(SERVER.start_banner , p) ){
-      usleep(5000000);
-      clear_screen(p);
-  }
 
   draw_board(p);
   draw_snake(p);
@@ -196,10 +199,10 @@ void move_snake(player *p){
     grow_snake(p);
     if ( serv_get_flags() & RANDOM_MODES  && random() % 100 == 0){
       int mods = serv_random_flags(); 
-      if ( mods & ( ARROGANT_MODE | TRASH_MODE ) ){
+      if ( mods & ( ANON_MODE | TRASH_MODE ) ){
         serv_notify_all(p->color, "MODS %s%s enabled, THANKS %s!", 
-              (TRASH_MODE & mods)    ?   "TRASH "    : "",
-              (ARROGANT_MODE & mods) ?  "ARROGANT " : "",
+              (TRASH_MODE & mods) ?  "TRASH "  : "",
+              (ANON_MODE & mods)  ?  "ANON  "  : "",
               p->name
             );
       }
@@ -210,10 +213,10 @@ void move_snake(player *p){
     if ( taili < 0 ) taili = taili + p->slen;
   }
 
-  if (SERVER.flags & ARROGANT_MODE)
-    place_str(phead.x, phead.y, NULL, "\e[48;5;%dm%c\e[0m", p->color, p->name[head_num % p->nlen]);
-  else
+  if (SERVER.flags & ANON_MODE)
     place_str(phead.x, phead.y, NULL, "\e[48;5;%dm \e[0m", p->color);
+  else
+    place_str(phead.x, phead.y, NULL, "\e[48;5;%dm%c\e[0m", p->color, p->name[head_num % p->nlen]);
 
   /* update memory struct */
   p->head = taili;
