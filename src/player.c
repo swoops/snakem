@@ -117,7 +117,6 @@ size_t player_term_string(char *s){
     else
       server_log(INFO, "[player_term_string] invalid first char %02x", ch & 0xff);
     s[0] = 0x00; /* just in case :) */
-    server_log(INFO, "[player_term_string] str now %s", s);
     return 0;
   }
   len = i;
