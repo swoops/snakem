@@ -1,4 +1,5 @@
-size_t player_term_string(char *s);
+#define SHADOW_CHARS 1  /* flag for player_get_str */
+
 /* clean up a bot a bot earlier */
 void player_kill_bot(player *p);
 
@@ -19,3 +20,6 @@ void destroy_player(player *p);
 player * init_player();
 
 int player_write(player *p, char *msg);
+
+/* put chars in buff 1 at a time up to size big */
+size_t player_get_str(player *p, char *buff, size_t size, int flags);

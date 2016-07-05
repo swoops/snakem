@@ -71,14 +71,12 @@ int progress_game(player *p){
   if (player_set_name(p))
     destroy_player(p);
 
-
   if ( serv_get_flags() & RANDOM_MODES &&  serv_get_flags() & ALL_MODES  ){
-      serv_set_flags( RANDOM_MODES );
+      serv_set_flags( serv_get_flags() & ( ~ ALL_MODES  ) );
       serv_notify_all(p->color, "SHHhhh!!! %s is joining, no more fun", p->name);
   }else{
       serv_notify_all(p->color, "%s Joined\e[00m", p->name);
   }
-
 
   clear_screen(p);
   go_home_cursor(p);
@@ -86,27 +84,21 @@ int progress_game(player *p){
       usleep(5000000);
       clear_screen(p);
   }
+  draw_board(p);
+  draw_snake(p);
+  serv_put_pellet(p);
+  show_score(p);
+
+
+  /*
+   * making the player alive must come before the second thread or there is a
+   * race and after any notify_alls that you don't want this player to see!!!
+  */
 
   p->flags &= ( (int) -1 ) ^ DEAD; 
 
   if ( pthread_create(&p->tid_controll, NULL, (void *) &snake_control, p) != 0 )
       server_log(FATAL, "Could not start control thread");
-
-  /* 
-   * tell tellnet not to write characters to the screen, send every keypress,
-   * and don't be such a jerk... thanks SO:
-   * https://stackoverflow.com/questions/4532344/send-data-over-telnet-without-pressing-enter
-  */
-  player_write(p,
-    "\xff\xfd\x22" /* IAC DO LINEMODE*/
-    "\xff\xfb\x01" /* IAC WILL ECHO */
-  ); 
-
-
-  draw_board(p);
-  draw_snake(p);
-  serv_put_pellet(p);
-  show_score(p);
 
   while(1){
     usleep(p->delay);

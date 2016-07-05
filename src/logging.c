@@ -1,5 +1,6 @@
 #include  "data_types.h"
 #include  "logging.h"
+#include  "server.h"  
 #include  <stdarg.h>  /*va_start*/
 #include  <stdlib.h>  /*exit*/
 #include  <stdio.h>   /*exit*/
@@ -8,9 +9,11 @@
 #include  <time.h>   /*time*/
 
 
-/* TODO: add time */
+/* TODO: add lock... because it writes in multiple stages */
 void server_log(int flag, char *fmt, ...) {
   char stime[32];
+  if ( ( flag & DEBUG ) && ( serv_get_flags() & DEBUG_ENABLED ) == 0)
+    return;
 
   struct tm *stm;
   time_t now = time(0);
@@ -22,6 +25,8 @@ void server_log(int flag, char *fmt, ...) {
   /* begining, with date and time, ect */
   if ( flag == INFO ){
     fprintf(SERVER.log, "[%s] INFO: ", stime);
+  }else if ( flag == DEBUG ){
+    fprintf(SERVER.log, "[%s] DBUG: ", stime);
   }else if ( flag == ERROR ){
     fprintf(SERVER.log, "[%s] ERROR ", stime);
   }else if ( flag == FATAL ){

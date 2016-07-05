@@ -31,6 +31,7 @@ TODO:
     - speed
   add mod nag
   add annoying banner to README
+  add bot nag when you kick them
 
 Warranty:
   There is none, this may not work or may cause your system to get hacked.

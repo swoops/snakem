@@ -31,11 +31,12 @@ void help_menu(char *p, int x){
   fprintf(stderr, "\t-y: \ttotal height of board (default: width)\n");
   fprintf(stderr, "\t-p: \tport to listen on (default 4444)\n");
   fprintf(stderr, "\t-l: \tlog file (default stderr)\n");
-  fprintf(stderr, "\t-i: \tspeed increase for pellots (default 1000)\n");
+  fprintf(stderr, "\t-i: \tspeed increase for pellets (default 1000)\n");
   fprintf(stderr, "\t-s: \tHigh Score to start with... better logging later :)\n");
   fprintf(stderr, "\t-n: \tName of player with high score (default Nobody)\n");
   fprintf(stderr, "\t-b: \tFile to be printed as the start banner\n");
   fprintf(stderr, "\t-m: \tMax number of players\n");
+  fprintf(stderr, "\t-d: \tdebug messages in log\n");
   fprintf(stderr, "\n");
   exit(x);
 }
@@ -45,10 +46,13 @@ int main(int argc, char *argv[]){
   int ch;
   init_server();
 
-  while ((ch = getopt (argc, argv, "hp:x:y:b:i:e:l:s:n:atr")) != -1){
+  while ((ch = getopt (argc, argv, "hp:x:y:b:i:e:l:s:n:atrd")) != -1){
     switch (ch) {
       case 'h':
         help_menu(argv[0], 0);
+        break;
+      case 'd':
+        SERVER.flags |= DEBUG_ENABLED;
         break;
       case 'a':
         SERVER.flags |= ANON_MODE;

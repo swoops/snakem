@@ -70,7 +70,7 @@ void destroy_player(player *p){
       inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), 
       p->score);
 
-  if ( p->flags && BOT == 0 ){
+  if ( ( p->flags & BOT ) == 0 ){
     if ( serv_check_highscore(p) )
       serv_notify_all(p->color, "NEW HIGH SCORE %s: %d", p->name, p->score);
     else
@@ -86,7 +86,7 @@ void destroy_player(player *p){
 
   /* delete player from server list */
   if ( serv_del_player(p) == -1 && serv_get_flags() & RANDOM_MODES  )
-    serv_set_flags( RANDOM_MODES );
+    serv_set_flags( serv_get_flags() & ( ~ ALL_MODES  ) );
 
   server_log(INFO, "part2 destroying player %p:%s done", p,p->name);
 
@@ -98,32 +98,102 @@ void destroy_player(player *p){
   pthread_exit(0);
 }
 
-size_t player_term_string(char *s){
-  size_t len;
-  int i;
+/* size is tottal size of the buffer to fill at most size-1 of them */
+size_t player_get_str(player *p, char *buff, size_t size, int flags){
+  size_t len = 0;
   char ch;
+  while (len < size-1){
+    ch =  player_getc(p);  
+    server_log(DEBUG, "[player_get_str] on char %d: 0x%02x", len, (ch & 0xff));
+    /* 
+     * valid characters add it on
+    */
+    if  (							
+							( ch >= (int) *"a" && ch <= (int) *"z" ) ||
+							( ch >= (int) *"A" && ch <= (int) *"Z" ) ||
+							( ch >= (int) *"0" && ch <= (int) *"9" ) ||
+							( ch == (int) *"0" )                     
+    ){
+      server_log(DEBUG, "[player_get_str] on char %d, ACCEPTED", len);
+      buff[len]   = ch;
+      if ( flags && SHADOW_CHARS )
+        write(p->fd, "*", 1);
+      else
+        write(p->fd, &ch, 1);
+      len++;
+    /*
+     * backspace
+    */
+		}else if ( ( ch & 0xff ) == 0x7f ){  
+      len--;
+      player_write(p, "\e[1D \e[1D");
+    /*
+     * ctrl+u
+    */
+		}else if ( ( ch & 0xff ) == 0x15 ){  
+      len = 0;
+      player_write(p, "\e[2K\e[20Dusername: ");
+    /* 
+     * IAC b/c they are using telnet 
+    */
+		}else if ( ( ch & 0xff ) == 0xff ){  
+      ch = player_getc(p);
+      /* 
+       * IAC: not ( WILL | WON'T | DO | DON'T  ) kick em ?
+      */ 
+      if ( ( ch & 0xff ) < 0xfa  || ( ch & 0xff ) > 0xfe ) { 
+        server_log(DEBUG, "[player_set_name] Player %p Got IAC 0x%02x, kicking", p, ch & 0xff); 
+        len = 0;
+        break;
+      /* subnegociation (SB), go till subnegociation ends (se) */
+      }else if ( (ch & 0xff) == 0xfa ){ 
+        while ( 1 ){
+          ch = player_getc(p);
+          if ( (ch & 0xff ) != 0xf0 )
+            server_log(DEBUG, "[player_set_name] in negociation, got 0x%02x", ch & 0xff);
+          else
+            break;
+        }
+      /* IAC and valid? */
+      }else{
+        server_log(DEBUG, "[player_set_name] %p sent IAC 0x%02x 0x%02x", p, ch & 0xff, player_getc(p) & 0xff);
+      }
 
-  for (i=0; i<MAX_PLAYER_NAME; i++){
-    ch = s[i];
-    if (ch == 0x0d || ch == 0x00) break;
-
-    if ( ch >= (int) *"a" && ch <= (int) *"z" ) continue; /* a-z fine*/
-    if ( ch >= (int) *"A" && ch <= (int) *"Z" ) continue; /* A-Z fine*/
-    if ( ch >= (int) *"0" && ch <= (int)* "9" ) continue; /* 0-9 fine*/
-    if ( ch == (int) *"0" )                     continue; /* " " fine*/
-
-    if ( i > 0 )
-      server_log(INFO, "[player_term_string] invalid char %02x, got to %s", ch & 0xff, s);
-    else
-      server_log(INFO, "[player_term_string] invalid first char %02x", ch & 0xff);
-    hexdump(s);
-    s[0] = 0x00; /* just in case :) */
-    return 0;
+    } else if ( (ch & 0xff) == 0x0d  || (ch & 0xff) == 0x00 ){   /* Terminating character, finish it up */
+      ch = player_getc(p);
+      server_log(DEBUG, "ending str, next char is: 0x%02x", ch & 0xff);
+      break;
+    /* 
+     * bad char, kill 
+    */
+		}else{
+      len = 0;
+      break;
+    }
   }
-  len = i;
-  s[i] = 0x00;
-  return len;
+  buff[len] = 0x00;
 
+  /* sanity */
+  int k = strlen(buff);
+  if ( k > size-1 ){
+    hexdump(buff);
+    server_log(FATAL, "%s [player_set_name] line %d BUFFER OVERFLOW DETECTED"
+                      "\n\t  size:  %d"
+                      "\n\t  strlen(buff)   %d",
+                      __FILE__, __LINE__, size, strlen(buff)
+    );
+  }
+  if ( k != len ){
+    hexdump(buff);
+    server_log(FATAL, "%s [player_set_name] line %d Did not get the write name length!!!"
+                      "\n\t  buff:  %s"
+                      "\n\t  k:        %d"
+                      "\n\t  len       %d",
+                      __FILE__, __LINE__, buff, k, len
+    );
+  }
+
+  return len;
 }
 
 int player_write(player *p, char *msg){
@@ -134,9 +204,18 @@ int player_write(player *p, char *msg){
 
 /* should not nead locks, 1 thread at this point */
 int player_set_name(player *p){
-  size_t len=0;
-  p->name = (char *) malloc(MAX_PLAYER_NAME);
+  size_t len;
 
+  /* 
+   * tell tellnet not to write characters to the screen, send every keypress,
+   * and don't be such a jerk... 
+  */
+  player_write(p,
+    "\xff\xfd\x22" /* IAC DO LINEMODE*/
+    "\xff\xfb\x01" /* IAC WILL ECHO */
+  ); 
+
+  p->name = (char *) malloc(MAX_PLAYER_NAME+1);
   if ( p->name == NULL ){
     server_log(ERROR, "[player_set_name] malloc() failed");
     player_write(p, "Sorry friend, got an error... try again later?\n");
@@ -144,25 +223,15 @@ int player_set_name(player *p){
   }
 
   player_write(p, "username: ");
-  read(p->fd, p->name, MAX_PLAYER_NAME-1);
-  if ( strcmp(p->name, "\xff\xfd\x03\xff\xfb\x18\xff\xfb\x1f\xff\xfb\x20\xff\xfb\x21") == 0 ){
-    read(p->fd, p->name, MAX_PLAYER_NAME-1);
-    if ( strcmp(p->name, "\xff\xfb\x22\xff\xfb\x27\xff\xfd\x05\xff\xfb\x23\xff\xfb\x21") == 0 ){
-      server_log(INFO, "[player_set_name] player %p is using a real telnet client!", p);
-			read(p->fd, p->name, MAX_PLAYER_NAME-1);
-		}
-  }
-
-  len = player_term_string(p->name);
+  len = player_get_str(p, p->name, MAX_PLAYER_NAME+1, 0);
 
   if ( len == 0 ){
     player_write(p, "Invalide username");
     return 1;
   }
 
-  if ((p->name = realloc(p->name, len)) == NULL){
-    server_log(ERROR, "[player_set_name] realloc() failed");
-    player_write(p,   "Sorry friend, got an error... try again later?\n");
+  if ((p->name = realloc(p->name, len+1)) == NULL){
+    server_log(FATAL, "%s [player_set_name] line %d realloc",__FILE__, __LINE__);
     return 1;
   }
 
@@ -171,8 +240,7 @@ int player_set_name(player *p){
     if (len == 6 && strcmp("nobody",  p->name) == 0) goto its_a_bot;
     if (len == 5 && strcmp("admin", p->name) == 0)   goto its_a_bot;
     if (len == 5 && strcmp("guest", p->name) == 0)   goto its_a_bot;
-    if (len == 7 && strcmp("support", p->name) == 0)   goto its_a_bot;
-
+    if (len == 7 && strcmp("support", p->name) == 0) goto its_a_bot;
   }else{
     if (len == 4 && strcmp("ubnt",  p->name) == 0)   goto its_a_bot;
     if (len == 4 && strcmp("root",  p->name) == 0)   goto its_a_bot;
@@ -180,30 +248,33 @@ int player_set_name(player *p){
   }
 
   /* you got here, all is well */
-  p->nlen = strlen(p->name);
+  p->nlen = len;
   server_log(INFO, "New Player %s (%p) %s:%d ", p->name, 
     p, inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port)
   );
   return 0;
 
   its_a_bot: { /* lets get ask him what his favoirt password is */
-      char buff[32];
-      player_write(p, "password: ");
-      read(p->fd, buff, sizeof(buff));
-      len = player_term_string(buff);
+      char pass[MAX_PLAYER_NAME+1];
+      
+      player_write(p, "\e[B\e[20Dpassword: ");
+      len = player_get_str(p, pass, MAX_PLAYER_NAME+1, SHADOW_CHARS);
+
       if ( len == 0 ) return 2;
-      player_write(p, "Go away jerk, you did not even cry at bambi\n");
+
+      player_write(p, "\e[1B\e[20DGo away jerk, you did not even cry at bambi\n");
       server_log(INFO, "Player %p %s:%d attempted to \"log in\" with creds (%s:%s)", 
         p, inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port),
-        p->name, buff
+        p->name, pass
       );
       p->flags |= BOT;
       serv_notify_all(88, "lol %s tried to login as (%s:%s)",
         inet_ntoa(p->addr->sin_addr), 
-        p->name, buff
+        p->name, pass
       );
-      return 1;
+      destroy_player(p);
   }
+  return 1;
 }
 
 player * init_player(){

@@ -1,6 +1,7 @@
-#define INFO  0
-#define ERROR  1
-#define FATAL 2
+#define INFO    0
+#define DEBUG   2
+#define ERROR   4
+#define FATAL   8
 
 /*
  * log stuff
