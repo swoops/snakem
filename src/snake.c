@@ -206,7 +206,7 @@ void move_snake(player *p){
   }
 
   if (SERVER.flags & ANON_MODE)
-    place_str(phead.x, phead.y, NULL, "\e[48;5;%dm \e[0m", p->color);
+    place_str(phead.x, phead.y, NULL, "\e[48;5;%dm \e[0m", 10);
   else
     place_str(phead.x, phead.y, NULL, "\e[48;5;%dm%c\e[0m", p->color, p->name[head_num % p->nlen]);
 
