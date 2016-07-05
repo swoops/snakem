@@ -152,7 +152,6 @@ void draw_board(player *p){
 	if (s_buff < (unsigned int) (ptr-buff))
     server_log(FATAL, "%s [draw_board]  line:%d detected overflow!!!", __FILE__, __LINE__ );
 
-  server_log(INFO, "size: %d", (int) ( ptr-buff));
   write(p->fd, buff, (ssize_t) (ptr-buff));
 
   #undef TMP_STR1

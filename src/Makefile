@@ -1,7 +1,7 @@
 CC = gcc
 
 CFLAGS = -Wall
-CFLAGS = -Wall -g3
+# CFLAGS = -Wall -g3
 
 LIBRARIES = pthread
 TARGET = snakem
