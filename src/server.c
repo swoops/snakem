@@ -134,7 +134,7 @@ int serv_check_highscore(player *p){
     flag = 1;
     SERVER.high_score = p->score;
     server_log(INFO, "!!!NEW HIGH SCORE!!! Player %s %s:%d scored %d", 
-      p->name, inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), p->score);
+      p->name, inet_ntoa(p->addr.sin_addr), ntohs(p->addr.sin_port), p->score);
 
     /* update SERVER with name of current high score holder */
     if ( SERVER.hs_name != NULL )

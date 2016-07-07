@@ -33,7 +33,6 @@ void game_over(player *p){
 
   for ( i=0; i<3; i++ ){
     place_str( x, y++, p, "%s", str);
-		if (SERVER.port == 0) fflush(FDOUT);
     usleep(500000);
   }
   clear_screen(p);
@@ -87,7 +86,6 @@ void winner(player *p){
 
   for ( i=0; i<3; i++ ){
     place_str( x, y++, p, "%s", str);
-    if ( SERVER.port == 0  ) fflush(FDOUT);
     usleep(500000);
   }
 

@@ -133,7 +133,7 @@ int main(int argc, char *argv[]){
 
   if ( SERVER.port == 0 ) server_log(FATAL, "0 is not a good port friend");
 
-  struct sockaddr_in host_addr, client_addr;
+  struct sockaddr_in host_addr;
   int sockfd, new_sockfd;  // Listen on sock_fd, new connection on new_fd
 
   change_signal();
@@ -158,19 +158,23 @@ int main(int argc, char *argv[]){
 
   server_log(INFO, "Listening on %s:%d", inet_ntoa(host_addr.sin_addr), ntohs(host_addr.sin_port));
 
+  if ( pthread_attr_init(&ATTR) != 0)
+    server_log(FATAL, "[main] %s:%d Could not init pthread attributes", __FILE__, __LINE__);
+  if ( pthread_attr_setdetachstate(&ATTR, PTHREAD_CREATE_DETACHED) != 0 )
+    server_log(FATAL, "[main] %s:%d Could not set attributes to detatch", __FILE__, __LINE__);
+
   while(1) {
     /* if server is full don't go taking more connections... */
     while( serv_full() ) sleep(1);
+    player * play = init_player();
 
     sin_size = sizeof(struct sockaddr_in);
-    new_sockfd = accept(sockfd, (struct sockaddr *)&client_addr, &sin_size);
+    new_sockfd = accept(sockfd, (struct sockaddr *)&play->addr, &sin_size);
     if(new_sockfd == -1 )
       server_log(FATAL, "[main] accepting connection");
 
-    server_log(INFO, "New connection from %s:%d", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-    player * play = init_player();
+    server_log(INFO, "New connection from %s:%d", inet_ntoa(play->addr.sin_addr), ntohs(play->addr.sin_port));
     play->fd = new_sockfd;
-    play->addr = &client_addr;
 
     /* while() sleep() loop should keep this from failing so if it does die */
     if ( serv_add_player(play) )
@@ -180,10 +184,11 @@ int main(int argc, char *argv[]){
     if (pthread_mutex_init(&play->lock, NULL) != 0)
         server_log(FATAL, "mutex init failed");
 
-    if ( pthread_create(&play->tid_progress, NULL, (void *) &progress_game, play) != 0 )
+    if ( pthread_create(&play->tid_progress, &ATTR, (void *) &progress_game, play) != 0 )
         server_log(FATAL, "failed to make progress thread");
   }
 
+  pthread_attr_destroy(&ATTR);
   if ( SERVER.log != stderr )
     fclose(SERVER.log);
     

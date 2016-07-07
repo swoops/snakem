@@ -97,7 +97,7 @@ int progress_game(player *p){
 
   p->flags &= ( (int) -1 ) ^ DEAD; 
 
-  if ( pthread_create(&p->tid_controll, NULL, (void *) &snake_control, p) != 0 )
+  if ( pthread_create(&p->tid_controll, &ATTR, (void *) &snake_control, p) != 0 )
       server_log(FATAL, "Could not start control thread");
 
   while(1){

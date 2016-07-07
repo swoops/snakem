@@ -48,7 +48,8 @@ void move_cursor_abs(int x, int y, player *p){
 
 void place_str(int x, int y, player *p, char *fmt, ...) {
   char buff[MAX_BUFF_SIZE];
-  move_cursor_abs(x,y,p);
+  if ( x || y )
+    move_cursor_abs(x,y,p);
   va_list ap;
   va_start(ap, fmt);
   vsnprintf(buff, sizeof(buff), fmt, ap);

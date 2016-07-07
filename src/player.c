@@ -67,7 +67,7 @@ void destroy_player(player *p){
   if ( p->score > 0 )
       server_log(INFO, "Player \"%s\" %p %s:%d scored %d", 
       p->name, p,
-      inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port), 
+      inet_ntoa(p->addr.sin_addr), ntohs(p->addr.sin_port), 
       p->score);
 
   if ( ( p->flags & BOT ) == 0 ){
@@ -250,7 +250,7 @@ int player_set_name(player *p){
   /* you got here, all is well */
   p->nlen = len;
   server_log(INFO, "New Player %s (%p) %s:%d ", p->name, 
-    p, inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port)
+    p, inet_ntoa(p->addr.sin_addr), ntohs(p->addr.sin_port)
   );
   return 0;
 
@@ -264,12 +264,12 @@ int player_set_name(player *p){
 
       player_write(p, "\e[1B\e[20DGo away jerk, you did not even cry at bambi\n");
       server_log(INFO, "Player %p %s:%d attempted to \"log in\" with creds (%s:%s)", 
-        p, inet_ntoa(p->addr->sin_addr), ntohs(p->addr->sin_port),
+        p, inet_ntoa(p->addr.sin_addr), ntohs(p->addr.sin_port),
         p->name, pass
       );
       p->flags |= BOT;
       serv_notify_all(88, "lol %s tried to login as (%s:%s)",
-        inet_ntoa(p->addr->sin_addr), 
+        inet_ntoa(p->addr.sin_addr), 
         p->name, pass
       );
       destroy_player(p);
@@ -283,8 +283,11 @@ player * init_player(){
   player *play = (player * ) malloc(sizeof(player));
   if ( play == NULL ) server_log(FATAL, "could not make player");
 
-  /* start the player half dead because of one thread, easier to kill*/
-  play->flags  = DEAD;   
+  /* 
+   * start the player half dead, makes it easier to kill and the server won't
+   * talk to you when it talks to everyone
+  */
+  play->flags  =  DEAD;   
   play->delay  =  100000;
   play->name   =  NULL;
   play->color  =  16+color;

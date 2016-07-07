@@ -1,12 +1,14 @@
 #ifndef  data_check
 #define data_check
+
 /* for the size of sprintf stuff */
 #define MAX_BUFF_SIZE 1024
-#define FDOUT stdout  
-#include <unistd.h> /*usleep*/
-#include<pthread.h> /* mutex_t */
-#include<stdio.h> /* mutex_t */
+
+#include <unistd.h>     /*usleep*/
+#include <pthread.h>    /*mutex_t*/
+#include <stdio.h>      /*mutex_t*/
 #include <sys/socket.h>
+#include <netinet/in.h>
 
 #define  UP     1   //  \e[1A
 #define  DOWN   2   //  \e[1B
@@ -19,20 +21,17 @@
 #define KILL 2    /* snake is dead, clean him off the road */
 #define BOT  4    /* this player is a bot trying to log in */
 
-
-
 #define ANON_MODE        4
 #define TRASH_MODE       8
 #define RANDOM_MODES    16
 #define DEBUG_ENABLED   32
 #define ALL_MODES ( ANON_MODE | TRASH_MODE )
 
-
+/* largets player name */
 #define MAX_PLAYER_NAME 16 
 
 
 /* char codes usesd often */
-
 #define GO_HOME_STR "\e[H"
 #define CLEAR_SCREEN_STR "\e[2J"
 #define CLEAR_LINE_STR "\e[2K"
@@ -60,8 +59,9 @@ typedef struct {
   pthread_t tid_progress;
   pthread_t tid_controll;
   int fd;                       /* file descriptor for socket */
-  struct sockaddr_in * addr;    /* clients address */
+  struct sockaddr_in addr;      /* clients address */
 } player;
+
 
 /* should be common to all players, global */
 typedef struct {
@@ -83,6 +83,8 @@ typedef struct {
 } server;
 
 
-// global server
+/* global server struct */
 server SERVER;
+/* all threads get the same attributes */
+pthread_attr_t ATTR;
 #endif
