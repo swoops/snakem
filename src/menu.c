@@ -15,7 +15,7 @@ void show_score(player *p){
     server_log(FATAL, "%s [show_score]  line:%d should not have NULL highscore name", __FILE__, __LINE__ );
 
   snprintf(buff, sizeof(buff), 
-      "\e[H\e[1B\e[2K%8u\e[%zuC%s:%8u\e[H",
+      "\e[2H\e[2K%8u\e[%zuC%s:%8u\e[H",
       p->score, 
       (size_t) SERVER.max_x - 17 - strlen(SERVER.hs_name), 
       SERVER.hs_name, SERVER.high_score
@@ -95,7 +95,7 @@ void winner(player *p){
 
 void draw_board(player *p){
   #define TMP_STR1 "Your Score\e["
-  #define TMP_STR2 "CHIGH SCORE\e[H\e[2B "
+  #define TMP_STR2 "CHIGH SCORE\e[3H "
   int i;
   int s_buff  = 20                                       /* snake color */
               + sizeof(TMP_STR1) + 3 + sizeof(TMP_STR2)  /* SCIRE: string + shift right ammount + string + home+down2 */

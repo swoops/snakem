@@ -10,6 +10,7 @@
 #include  <netinet/in.h>  /*inet_ntoa*/
 #include  <arpa/inet.h>   /*inet_ntoa*/
 #include  "player.h"
+#include  "snake.h"
 #include  "movement.h"
 
 void init_server(){
@@ -58,6 +59,25 @@ void debug_player_array(char *msg){
   server_log(INFO, "%s total players: %d", msg, SERVER.last_player+1);
   for (i=0; i<=SERVER.max_players; i++)
     server_log(INFO,"\t p[%d]: %p", i, SERVER.players[i]);
+}
+
+int serv_check_collisions(int head){
+  int i;
+  serv_lock();
+  for (i=0; i<=SERVER.last_player; i++){
+    pthread_mutex_lock(&SERVER.players[i]->lock);
+    if (SERVER.players[i]->flags | DEAD ){
+      if ( snake_collision(SERVER.players[i], head) ){
+        /* collision so clean and return */
+        pthread_mutex_unlock(&SERVER.players[i]->lock);
+        serv_unlock();
+        return 1;
+      }
+    }
+    pthread_mutex_unlock(&SERVER.players[i]->lock);
+  }
+  serv_unlock();
+  return 0;
 }
 
 void serv_write(char *buff){

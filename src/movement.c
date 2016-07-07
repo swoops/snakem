@@ -22,38 +22,22 @@ void go_home_cursor(player *p){
     serv_write(GO_HOME_STR);
 }
 
-// 0,0 is home... or should it be?
-void move_cursor_abs(int x, int y, player *p){
-  char buff[40]; /* should not need more then that */
-  x = check_bounds(x, SERVER.max_x, 0);
-  y = check_bounds(y, SERVER.max_y, 0);
-
-  /*
-   * go home 0,0 then move down and right x,y would be better to move relative
-   * to current location but swoops that for now...
-  */
-  go_home_cursor(p);
-  if ( x > 0 && y > 0 )
-    snprintf(buff, sizeof(buff), "\e[%dC\e[%dB", x, y);
-  else if ( x > 0 )
-    snprintf(buff, sizeof(buff), "\e[%dC", x);
-  else if ( y > 0 )
-    snprintf(buff, sizeof(buff),"\e[%dB", y);
-
-  if (p != NULL)
-    player_write(p,buff);
-  else
-    serv_write(buff);
-}
-
 void place_str(int x, int y, player *p, char *fmt, ...) {
   char buff[MAX_BUFF_SIZE];
-  if ( x || y )
-    move_cursor_abs(x,y,p);
+  char *ptr = buff;
+  char move[] = "\e[%d;%df";
+  int move_len = sizeof(move)+6;  /* d is at most 3 chars long */
+
+  if ( x>=0 && y>=0 )
+    ptr+=sprintf(buff, move, y+1, x+1);
+
   va_list ap;
   va_start(ap, fmt);
-  vsnprintf(buff, sizeof(buff), fmt, ap);
+  vsnprintf(ptr, sizeof(buff)-move_len, fmt, ap);
   va_end(ap);
+
+  strncat(buff, GO_HOME_STR, sizeof(buff));
+
   if (p != NULL)
     player_write(p,buff);
   else

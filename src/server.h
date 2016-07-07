@@ -18,3 +18,5 @@ int serv_get_flags();
 int serv_get_num_players();
 int serv_get_pellet();
 
+/* check if there is a collision between a point and any alive snake */
+int serv_check_collisions(int head);

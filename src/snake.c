@@ -109,6 +109,7 @@ int progress_game(player *p){
 void grow_snake(player *p){
   p->score += 50;
   show_score(p);
+  player_lock(p);
   if ( p->size == p->slen ){
     winner(p);  // TODO: realloc memory so no one wins... ever...
     destroy_player(p);
@@ -116,10 +117,11 @@ void grow_snake(player *p){
   int i;
   for ( i=p->slen++; i >= p->head; i-- )
     p->pix[i+1] = p->pix[i];
+  p->head = ( p->head+1 ) % p->slen;
+  player_unlock(p);
 
   p->delay -= SERVER.t_inc;  // go faster
 
-  p->head = ( p->head+1 ) % p->slen;
 }
 void move_snake(player *p){
   point phead, ptail;
@@ -170,7 +172,7 @@ void move_snake(player *p){
    * check pellet before "expensive" check of hitting itself
   */
   if ( head_num != serv_get_pellet() ){
-    if ( snake_collision(p, head_num) ){
+    if ( p->slen > 3 && serv_check_collisions(head_num) ){  /* players <3 invincible :) */
       game_over(p);
       destroy_player(p);
     }
@@ -211,19 +213,54 @@ void move_snake(player *p){
     place_str(phead.x, phead.y, NULL, "\e[48;5;%dm%c\e[0m", p->color, p->name[head_num % p->nlen]);
 
   /* update memory struct */
+  player_lock(p);
   p->head = taili;
   p->pix[p->head] =  head_num;
+  player_unlock(p);
 
 }
-
-/* TODO: skip taxi cab distance through array? */
+void debug_snake(player *p){
+  int i;
+  for ( i=0; i<=p->slen; i++ )
+    printf("p->pix[%d] = %d %s\n", i, p->pix[i], (i==p->head) ? "<- head" : "");
+}
 int snake_collision(player *p, int col){
   int i;
 
-  for ( i=1; i<p->slen; i++ )
-    if ( p->pix[i] == col )
-      return 1;
+  /*
+   * pix[0] *             pix[5]  h  <-  ( 0 + p->head  ) % slen
+   * pix[1] *             pix[6]  *  <-  ( 1 + p->head  ) % slen
+   * pix[2] *             pix[7]  *  <-  ( 2 + p->head  ) % slen
+   * pix[3] *             pix[8]  *  <-  ( 3 + p->head  ) % slen
+   * pix[4] t             pix[9]  *  <-  ( 4 + p->head  ) % slen
+   * pix[5] h    -->      pix[0]  *  <-  ( 5 + p->head  ) % slen
+   * pix[6] *             pix[1]  *  <-  ( 6 + p->head  ) % slen
+   * pix[7] *             pix[2]  *  <-  ( 7 + p->head  ) % slen
+   * pix[8] *             pix[3]  *  <-  ( 8 + p->head  ) % slen
+   * pix[9] *             pix[4]  t  <-  ( 9 + p->head  ) % slen
+  */
+  /*
+   * handle when col is the head of your own snake
+  */
+
+  int diff;
+  int tail = p->head-1;
+  /* debug_snake(p); */
+
+
+  if ( tail < 0 ) tail += p->slen;
+
+  for (i=p->slen-1; i>=0; ){
+    diff = abs(p->pix[ ( i+p->head ) % p->slen ] - col);
+    /* printf("on pix[%d] %d is it %d diff: %d\n", ( i+p->head ) % p->slen, p->pix[ ( i+p->head ) % p->slen ], col,  diff); */
+
+    if ( diff == 0 ) return i;
+
+    i -= ( diff / (SERVER.max_x-5) )    /* rows away */
+         + ( diff % (SERVER.max_x-5) );    /* columns away */
+    /* printf("dist: %d, next up i: %d -> pix[%d]\n", dist, i, ( i+p->head ) % p->slen); */
+
+  }
 
   return 0;
 }
-
