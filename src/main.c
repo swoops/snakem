@@ -45,6 +45,7 @@ int main(int argc, char *argv[]){
   /* TODO: put this junk in a function in another file */
   int ch;
   init_server();
+  DEBUG_ENABLED = 0;
 
   while ((ch = getopt (argc, argv, "hp:x:y:b:i:e:l:s:n:atrd")) != -1){
     switch (ch) {
@@ -52,7 +53,7 @@ int main(int argc, char *argv[]){
         help_menu(argv[0], 0);
         break;
       case 'd':
-        SERVER.flags |= DEBUG_ENABLED;
+        DEBUG_ENABLED = 1;
         break;
       case 'a':
         SERVER.flags |= ANON_MODE;

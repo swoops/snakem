@@ -172,7 +172,7 @@ void move_snake(player *p){
    * check pellet before "expensive" check of hitting itself
   */
   if ( head_num != serv_get_pellet() ){
-    if ( p->slen > 3 && serv_check_collisions(head_num) ){  /* players <3 invincible :) */
+    if ( p->slen > 3 && serv_check_collisions(head_num, p->name) ){  /* players <3 invincible :) */
       game_over(p);
       destroy_player(p);
     }
@@ -219,46 +219,47 @@ void move_snake(player *p){
   player_unlock(p);
 
 }
-void debug_snake(player *p){
-  int i;
-  for ( i=0; i<=p->slen; i++ )
-    printf("p->pix[%d] = %d %s\n", i, p->pix[i], (i==p->head) ? "<- head" : "");
-}
-int snake_collision(player *p, int col){
-  int i;
+/* TODO: make debug a compile flag*/
 
-  /*
-   * pix[0] *             pix[5]  h  <-  ( 0 + p->head  ) % slen
-   * pix[1] *             pix[6]  *  <-  ( 1 + p->head  ) % slen
-   * pix[2] *             pix[7]  *  <-  ( 2 + p->head  ) % slen
-   * pix[3] *             pix[8]  *  <-  ( 3 + p->head  ) % slen
-   * pix[4] t             pix[9]  *  <-  ( 4 + p->head  ) % slen
-   * pix[5] h    -->      pix[0]  *  <-  ( 5 + p->head  ) % slen
-   * pix[6] *             pix[1]  *  <-  ( 6 + p->head  ) % slen
-   * pix[7] *             pix[2]  *  <-  ( 7 + p->head  ) % slen
-   * pix[8] *             pix[3]  *  <-  ( 8 + p->head  ) % slen
-   * pix[9] *             pix[4]  t  <-  ( 9 + p->head  ) % slen
+int snake_collision(player *p, int col){
+  /* loop might seem strange, this diagram should help understand the conversion
+   * |original|   |what I loop|   |i|     
+   * pix[0] *     pix[5]  h  <-  ( 0 + p->head  ) % slen <- once i < 0 you are done
+   * pix[1] *     pix[6]  *  <-  ( 1 + p->head  ) % slen
+   * pix[2] *     pix[7]  *  <-  ( 2 + p->head  ) % slen
+   * pix[3] *     pix[8]  *  <-  ( 3 + p->head  ) % slen
+   * pix[4] t     pix[9]  *  <-  ( 4 + p->head  ) % slen
+   * pix[5] h  >  pix[0]  *  <-  ( 5 + p->head  ) % slen
+   * pix[6] *     pix[1]  *  <-  ( 6 + p->head  ) % slen
+   * pix[7] *     pix[2]  *  <-  ( 7 + p->head  ) % slen
+   * pix[8] *     pix[3]  *  <-  ( 8 + p->head  ) % slen
+   * pix[9] *     pix[4]  t  <-  ( 9 + p->head  ) % slen <- start on tail
   */
   /*
    * handle when col is the head of your own snake
   */
-
-  int diff;
-  int tail = p->head-1;
-  /* debug_snake(p); */
-
-
-  if ( tail < 0 ) tail += p->slen;
+  int i,dist;
+  point pos1, pos2;
 
   for (i=p->slen-1; i>=0; ){
-    diff = abs(p->pix[ ( i+p->head ) % p->slen ] - col);
-    /* printf("on pix[%d] %d is it %d diff: %d\n", ( i+p->head ) % p->slen, p->pix[ ( i+p->head ) % p->slen ], col,  diff); */
+    if ( num_to_cord(col, &pos1) != 1)
+      server_log(ERROR, "%s:%dPoint outside of bounsd", __FILE__, __LINE__);
+    if ( num_to_cord(p->pix[(i+p->head)%p->slen], &pos2) != 1)
+      server_log(ERROR, "%s:%dPoint outside of bounsd", __FILE__, __LINE__);
 
-    if ( diff == 0 ) return i;
+    /* Manhattan/Taxi Cab distance */
+    dist = abs(pos1.x-pos2.x)+ abs(pos1.y-pos2.y);
 
-    i -= ( diff / (SERVER.max_x-5) )    /* rows away */
-         + ( diff % (SERVER.max_x-5) );    /* columns away */
-    /* printf("dist: %d, next up i: %d -> pix[%d]\n", dist, i, ( i+p->head ) % p->slen); */
+    if ( dist == 0 ) /* collision */
+      return 1;
+
+    /* 
+     * if the i'th position is, lets, say 3, away from the collision point.
+     * That means you have to move at LEAST 3 pixels to collide.  So the next
+     * two pixels in the snake can not collide, skip over them :)
+    */
+
+    i -= dist;
 
   }
 

@@ -24,7 +24,6 @@
 #define ANON_MODE        4
 #define TRASH_MODE       8
 #define RANDOM_MODES    16
-#define DEBUG_ENABLED   32
 #define ALL_MODES ( ANON_MODE | TRASH_MODE )
 
 /* largets player name */
@@ -87,4 +86,5 @@ typedef struct {
 server SERVER;
 /* all threads get the same attributes */
 pthread_attr_t ATTR;
+int DEBUG_ENABLED;  /* for debugging of course */
 #endif

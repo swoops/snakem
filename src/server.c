@@ -11,6 +11,7 @@
 #include  <arpa/inet.h>   /*inet_ntoa*/
 #include  "player.h"
 #include  "snake.h"
+#include  "menu.h"
 #include  "movement.h"
 
 void init_server(){
@@ -61,7 +62,7 @@ void debug_player_array(char *msg){
     server_log(INFO,"\t p[%d]: %p", i, SERVER.players[i]);
 }
 
-int serv_check_collisions(int head){
+int serv_check_collisions(int head, char *name){
   int i;
   serv_lock();
   for (i=0; i<=SERVER.last_player; i++){
@@ -69,8 +70,11 @@ int serv_check_collisions(int head){
     if (SERVER.players[i]->flags | DEAD ){
       if ( snake_collision(SERVER.players[i], head) ){
         /* collision so clean and return */
-        pthread_mutex_unlock(&SERVER.players[i]->lock);
         serv_unlock();
+        SERVER.players[i]->score += 100;
+        show_score(SERVER.players[i]);
+        pthread_mutex_unlock(&SERVER.players[i]->lock);
+        serv_notify_all(SERVER.players[i]->color, "%s killed %s ", SERVER.players[i]->name, name );
         return 1;
       }
     }
@@ -80,6 +84,7 @@ int serv_check_collisions(int head){
   return 0;
 }
 
+/* locks server and all players */
 void serv_write(char *buff){
   int i;
   int len = strlen(buff);
@@ -212,28 +217,28 @@ void serv_set_flags(int flags){
   serv_unlock();
 }
 
+/* locks server and all players */
 void serv_notify_all(int color, char *fmt, ...) {
   /* 
    * BE CAREFULL CHANGING THIS FUNCTION !!!
    *           it is stupid
   */
 
-  #define TMP_CLOSE_STR "\e[00m"
+  #define PT_1_STR "\e[%dH\e[L \e[38;5;%dm" /* go to position, new line, color */
+  #define TMP_CLOSE_STR "\e[00m\e[4B\e[2K\e[H"  /* end color, go down, clear line, go home*/
   int i;
-  int max_str = sizeof(CLEAR_LINE_STR) + 9 + 1 + 11   /* clear line, home, move down, space,  and color */
+  int max_str = sizeof(PT_1_STR) + 6          /* len PT_1_STR + len %d *2 */
               + SERVER.max_x + 64             /* width of screen, plus some room for encoding ie: vsnprintf */
               + sizeof(TMP_CLOSE_STR)         /* end encoding */
               + 1;                            /* null of course */
   char buff[max_str];
   va_list ap;
 
-  if ( color <= 17 && color >= 231 )
+  if ( color < 17 || color > 231 )
     color = 10;  /* GREEN like a term should be!!!! */
 
-  snprintf(buff, max_str, "\e[H\e[%dB%s \e[38;5;%dm", SERVER.max_y, CLEAR_LINE_STR, color);
-
-  /* don't trust snprintf return value... it is just safer that way */
-  i = strlen(buff);
+  i = sprintf(buff, PT_1_STR, SERVER.max_y+1, color);
+  #undef PT_1_STR
 
   va_start(ap, fmt);
   /* leave room for the closing string */

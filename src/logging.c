@@ -12,7 +12,7 @@
 /* TODO: add lock... because it writes in multiple stages */
 void server_log(int flag, char *fmt, ...) {
   char stime[32];
-  if ( ( flag & DEBUG ) && ( serv_get_flags() & DEBUG_ENABLED ) == 0)
+  if (  ( flag & DEBUG )  &&  !DEBUG_ENABLED )
     return;
 
   struct tm *stm;
