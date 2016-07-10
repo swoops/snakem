@@ -8,6 +8,7 @@
 #include  "server.h"
 #include  "player.h"
 #include  "logging.h"
+#include  "menu.h"
 
 void player_kill_bot(player *p){
 }
@@ -237,6 +238,7 @@ int player_set_name(player *p){
 
   /* dumb bot trying to get lucky... I am not that type of game! */
   if ( len > 4 ){
+    if (len == 6 && strcmp("888888",  p->name) == 0)   goto its_a_bot;
     if (len == 6 && strcmp("nobody",  p->name) == 0) goto its_a_bot;
     if (len == 5 && strcmp("admin", p->name) == 0)   goto its_a_bot;
     if (len == 5 && strcmp("guest", p->name) == 0)   goto its_a_bot;
@@ -262,7 +264,9 @@ int player_set_name(player *p){
 
       if ( len == 0 ) return 2;
 
-      player_write(p, "\e[1B\e[20DGo away jerk, you did not even cry at bambi\n");
+      if ( ! SERVER.bot_warn ||  write_file(SERVER.bot_warn , p))
+        player_write(p, "\e[1B\e[20DGo away jerk, you did not even cry at bambi\n");
+
       server_log(INFO, "Player %p %s:%d attempted to \"log in\" with creds (%s:%s)", 
         p, inet_ntoa(p->addr.sin_addr), ntohs(p->addr.sin_port),
         p->name, pass

@@ -72,6 +72,7 @@ typedef struct {
   unsigned int high_score;
   struct sockaddr_in * addr;
   char * start_banner;
+  char * bot_warn;
   int flags;
   player ** players;            /* array of players NULL terminated */
   int max_players;              /* max number of players */

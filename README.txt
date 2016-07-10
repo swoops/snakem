@@ -16,10 +16,6 @@ snakem
   	$ telnet 127.0.0.1 4444
 
 TODO:
-  usernames fail on port 23 because telnet automatics sends IAC stuff, so add
-	  acceptance for those characters
-  faster collision detection with taxi cab distance
-  snakes hit each other
   handle ctrl+c to clean up sockets nicely...
   add a high score log
   add "A Challenger Approaches" nag
@@ -31,7 +27,6 @@ TODO:
     - speed
   add mod nag
   add annoying banner to README
-  add bot nag when you kick them
 
 Warranty:
   There is none, this may not work or may cause your system to get hacked.

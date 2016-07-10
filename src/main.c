@@ -35,6 +35,7 @@ void help_menu(char *p, int x){
   fprintf(stderr, "\t-s: \tHigh Score to start with... better logging later :)\n");
   fprintf(stderr, "\t-n: \tName of player with high score (default Nobody)\n");
   fprintf(stderr, "\t-b: \tFile to be printed as the start banner\n");
+  fprintf(stderr, "\t-w: \tFile to be printed as the warning for bots\n");
   fprintf(stderr, "\t-m: \tMax number of players\n");
   fprintf(stderr, "\t-d: \tdebug messages in log\n");
   fprintf(stderr, "\n");
@@ -47,7 +48,7 @@ int main(int argc, char *argv[]){
   init_server();
   DEBUG_ENABLED = 0;
 
-  while ((ch = getopt (argc, argv, "hp:x:y:b:i:e:l:s:n:atrd")) != -1){
+  while ((ch = getopt (argc, argv, "hp:x:y:b:i:l:w:s:n:atrd")) != -1){
     switch (ch) {
       case 'h':
         help_menu(argv[0], 0);
@@ -64,12 +65,11 @@ int main(int argc, char *argv[]){
       case 't':
         SERVER.flags |= TRASH_MODE;
         break;
-      case 'e':
-        fprintf(stderr, "not implemented yet\n");
-        help_menu(argv[0], 5);
-        break;
       case 'b':
         SERVER.start_banner = optarg;
+        break;
+      case 'w':
+        SERVER.bot_warn = optarg;
         break;
       case 'p':
         SERVER.port = atoi(optarg);

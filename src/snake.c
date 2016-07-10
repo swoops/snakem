@@ -81,7 +81,7 @@ int progress_game(player *p){
   clear_screen(p);
   go_home_cursor(p);
   if ( SERVER.start_banner  && ! write_file(SERVER.start_banner , p) ){
-      usleep(5000000);
+      player_getc(p);
       clear_screen(p);
   }
   draw_board(p);

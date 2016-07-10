@@ -24,6 +24,7 @@ void init_server(){
   SERVER.t_inc         =  1000;
   SERVER.log           =  stderr;
   SERVER.start_banner  =  NULL;
+  SERVER.bot_warn      =  NULL;
   SERVER.last_player   =  -1;
   SERVER.max_players   =  5;
 
