@@ -98,7 +98,6 @@ void destroy_player(player *p){
   else
     server_log(INFO, "Player %p:%s destroyed", p, p->name);
 
-
   free(p->name);
   close(p->fd);
   free(p->pix);
@@ -122,9 +121,12 @@ size_t player_get_str(player *p, char *buff, size_t size, int flags){
 							( ch >= (int) *"a" && ch <= (int) *"z" ) ||
 							( ch >= (int) *"A" && ch <= (int) *"Z" ) ||
 							( ch >= (int) *"0" && ch <= (int) *"9" ) ||
-							( ch == (int) *"0" )                     
+							( ch == (int) *"_" )                     ||
+							( ch == (int) *" " )
+
     ){
       server_log(DEBUG, "[player_get_str] on char %d, ACCEPTED", len);
+      if ( ch == (int) *" " ) ch = *"_";
       buff[len]   = ch;
       if ( flags & SHADOW_CHARS )
         write(p->fd, "*", 1);
@@ -180,10 +182,7 @@ size_t player_get_str(player *p, char *buff, size_t size, int flags){
     /* 
      * bad char, kill 
     */
-		}else{
-      len = 0;
-      break;
-    }
+		}
   }
   /* sanity */
   if ( len > size ) {
