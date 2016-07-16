@@ -228,6 +228,8 @@ size_t player_get_str(player *p, char *buff, size_t size, int flags){
 int player_write(player *p, char *msg){
     int ret;
     ret = write(p->fd, msg, strlen(msg));
+    if ( ret == -1 )
+      destroy_player(p);
     return ret;
 }
 

@@ -101,8 +101,7 @@ int snake_spectate(player *p){
         /* send a message to everyone */
         case 'm':
           p->flags |= DEAD; /* don't talk while I am typing */
-          clear_screen(p);
-          player_write(p, "\e[HMSG: ");
+          player_write(p, "\e[2J\e[HMSG: ");
           if ( player_get_str(p, msgbuff, sizeof(msgbuff), NO_FLIP_SPACE) != 0 )
             serv_notify_all(10, "watcher: %s", msgbuff);
           draw_board(p);
