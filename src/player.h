@@ -1,4 +1,6 @@
-#define SHADOW_CHARS 1  /* flag for player_get_str */
+/* flags for player_get_str */
+#define SHADOW_CHARS 1 
+#define MIN_IAC_REQ 2   
 
 /* clean up a bot a bot earlier */
 void player_kill_bot(player *p);
@@ -23,3 +25,6 @@ int player_write(player *p, char *msg);
 
 /* put chars in buff 1 at a time up to size big */
 size_t player_get_str(player *p, char *buff, size_t size, int flags);
+
+int check_spectator(player *p);
+void player_is_a_bot(player *);

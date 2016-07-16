@@ -28,7 +28,10 @@ void init_server(){
   SERVER.last_player   =  -1;
   SERVER.max_players   =  5;
 
-  SERVER.hs_name = strdup("Nobody");
+  SERVER.hs_name   = strdup("Nobody");
+
+  SERVER.spec_name = NULL;
+  SERVER.spec_pass = NULL;
 
   if (SERVER.hs_name == NULL)
     server_log(FATAL, "%s [init_server]  line:%d ", __FILE__, __LINE__ );

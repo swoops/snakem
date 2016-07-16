@@ -17,9 +17,10 @@
 #define  HOLDD  16  //  \e[1D
 
 /* for snake flags */
-#define DEAD 1    /* snake is dead, clean him off the road */
-#define KILL 2    /* snake is dead, clean him off the road */
-#define BOT  4    /* this player is a bot trying to log in */
+#define DEAD       1    /* snake is dead, clean him off the road */
+#define KILL       2    /* snake is dead, clean him off the road */
+#define BOT        4    /* this player is a bot trying to log in */
+#define SPECTATOR  8    /* This player is just here to watch */
 
 #define ANON_MODE        4
 #define TRASH_MODE       8
@@ -69,6 +70,8 @@ typedef struct {
   int t_inc;                    /* how much to increase the speed per pellot */
   int port;                     /* port to listen on */
   int pellet;                   /* location of pellet*/
+  char *spec_name;              /* name of spectator account */
+  char *spec_pass;              /* password for spectator account */
   unsigned int high_score;
   struct sockaddr_in * addr;
   char * start_banner;

@@ -23,3 +23,4 @@ void draw_snake(player *p);
  * simpler way to change direction, takes care of lock for you
 */
 void change_dir(player *p, unsigned  int dir);
+int snake_spectate(player *p);

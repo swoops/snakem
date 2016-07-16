@@ -56,6 +56,9 @@ int snake_control(player *p){
         case 's':
           change_dir(p, DOWN);
           break;
+        case 0x00:
+          destroy_player(p);
+          break;
         default:
           player_lock(p);
           player_unlock(p);
@@ -67,9 +70,66 @@ int snake_control(player *p){
 
 }
 
+/* TODO:
+ * currently this accepts a player struct which is fine for now because
+ * player_init starts the player with min slen, this keeps the server from
+ * attempting to find collisions... however it would be better to make a
+ * spectator struct that does not contain as much needless junk, pixels, slen,
+ * head, ect. Don't put that spectator inside of the list of players, destroy
+ * him differently, and make sure server_write loops through the spectators for
+ * write also.  For now this hack *works* but by accident. 
+ */ 
+int snake_spectate(player *p){
+  char ch;
+  int mods;
+
+  clear_screen(p);
+  draw_board(p);
+  serv_put_pellet(p);
+
+  /* no longer dead, so it gets serv_notify_all msgs */
+  p->flags &= ( (int) -1 ) ^ DEAD; 
+
+  while((ch = player_getc(p)) != 'q' ){
+    switch(ch){
+        case 'c':
+          clear_screen(p);
+          draw_board(p);
+          serv_put_pellet(p);
+          break;
+        case 'r':
+          if ( serv_get_flags() & RANDOM_MODES ){
+            mods = serv_random_flags(); 
+            if ( mods & ( ANON_MODE | TRASH_MODE ) ){
+              serv_notify_all(88, "MODS %s%s enabled by the watcher",
+                    (TRASH_MODE & mods) ?  "TRASH "  : "",
+                    (ANON_MODE & mods)  ?  "ANON  "  : ""
+              );
+            }
+          }
+          break;
+        case 0x00:
+          server_log(DEBUG, "spectator is gone");
+          destroy_player(p);
+          break;
+        default:
+          sleep(1);
+          server_log(DEBUG, "Spectator pressed: 0x%02x", ch&0xff);
+          break;
+    }
+  }
+  clear_screen(p);
+  destroy_player(p);
+  return 0;
+}
+
 int progress_game(player *p){
   if (player_set_name(p))
     destroy_player(p);
+
+  /* player just wants to watch */
+  if ( p->flags & SPECTATOR )
+    snake_spectate(p);
 
   if ( serv_get_flags() & RANDOM_MODES &&  serv_get_flags() & ALL_MODES  ){
       serv_set_flags( serv_get_flags() & ( ~ ALL_MODES  ) );

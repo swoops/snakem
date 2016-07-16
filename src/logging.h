@@ -7,4 +7,4 @@
  * log stuff
 */
 void server_log(int flags, char *fmt, ...);
-void hexdump(char *str);
+void hexdump(char *str, size_t size);

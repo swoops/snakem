@@ -38,6 +38,8 @@ void help_menu(char *p, int x){
   fprintf(stderr, "\t-w: \tFile to be printed as the warning for bots\n");
   fprintf(stderr, "\t-m: \tMax number of players\n");
   fprintf(stderr, "\t-d: \tdebug messages in log\n");
+  fprintf(stderr, "\t-c: \tspectator account name\n");
+  fprintf(stderr, "\t-z: \tspectator password\n");
   fprintf(stderr, "\n");
   exit(x);
 }
@@ -48,7 +50,7 @@ int main(int argc, char *argv[]){
   init_server();
   DEBUG_ENABLED = 0;
 
-  while ((ch = getopt (argc, argv, "hp:x:y:b:i:l:w:s:n:atrd")) != -1){
+  while ((ch = getopt (argc, argv, "hp:x:y:b:i:l:w:s:n:atrdc:z:")) != -1){
     switch (ch) {
       case 'h':
         help_menu(argv[0], 0);
@@ -79,6 +81,15 @@ int main(int argc, char *argv[]){
         break;
       case 's':
         SERVER.high_score = atoi(optarg);
+        break;
+      case 'c':
+        if ( strlen(optarg) > MAX_PLAYER_NAME )
+          server_log(FATAL, "%s [main] line: %d provided spectator name too big", __FILE__, __LINE__);
+        SERVER.spec_name = optarg;
+      case 'z':
+        if ( strlen(optarg) > MAX_PLAYER_NAME )
+          server_log(FATAL, "%s [main] line: %d provided spectator name too big", __FILE__, __LINE__);
+        SERVER.spec_pass = optarg;
         break;
       case 'n':
         if ( strlen(optarg) > MAX_PLAYER_NAME )

@@ -60,9 +60,9 @@ void server_log(int flag, char *fmt, ...) {
 
 }
 
-void hexdump(char *str){
-  int i;
-  int len = strlen(str);
+void hexdump(char *str, size_t size){
+  size_t  i;
+  size_t len = (size) ? size : strlen(str);
   char buff1[3*16+1+5];
   char buff2[17];
   char *ptr = buff1;
