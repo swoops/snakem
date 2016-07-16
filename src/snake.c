@@ -152,7 +152,7 @@ int progress_game(player *p){
   clear_screen(p);
   go_home_cursor(p);
   if ( SERVER.start_banner  && ! write_file(SERVER.start_banner , p) ){
-      player_getc(p);
+      if ( player_getc(p) == 0x00) destroy_player(p);
       clear_screen(p);
   }
   draw_board(p);
