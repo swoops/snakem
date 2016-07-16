@@ -1,6 +1,7 @@
 /* flags for player_get_str */
-#define SHADOW_CHARS 1 
-#define MIN_IAC_REQ 2   
+#define  SHADOW_CHARS   1  /* turn all valid chars into "*" */
+#define  MIN_IAC_REQ    2  /* require at least a few IAC chars to show you are using telnet (bot check) */
+#define  NO_FLIP_SPACE  4  /* don't s/ /_/  player names don't need spaces, I am paranoid, but msgs probabbly do */
 
 /* clean up a bot a bot earlier */
 void player_kill_bot(player *p);

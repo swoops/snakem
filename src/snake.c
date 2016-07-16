@@ -82,6 +82,7 @@ int snake_control(player *p){
 int snake_spectate(player *p){
   char ch;
   int mods;
+  char msgbuff[140];
 
   clear_screen(p);
   draw_board(p);
@@ -96,6 +97,17 @@ int snake_spectate(player *p){
           clear_screen(p);
           draw_board(p);
           serv_put_pellet(p);
+          break;
+        /* send a message to everyone */
+        case 'm':
+          p->flags |= DEAD; /* don't talk while I am typing */
+          clear_screen(p);
+          player_write(p, "\e[HMSG: ");
+          if ( player_get_str(p, msgbuff, sizeof(msgbuff), NO_FLIP_SPACE) != 0 )
+            serv_notify_all(10, "watcher: %s", msgbuff);
+          draw_board(p);
+          serv_put_pellet(p);
+          p->flags &= ( (int) -1 ) ^ DEAD; 
           break;
         case 'r':
           if ( serv_get_flags() & RANDOM_MODES ){

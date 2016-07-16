@@ -126,7 +126,7 @@ size_t player_get_str(player *p, char *buff, size_t size, int flags){
 
     ){
       server_log(DEBUG, "[player_get_str] on char %d, ACCEPTED", len);
-      if ( ch == (int) *" " ) ch = *"_";
+      if ( ! ( flags & NO_FLIP_SPACE ) && ch == (int) *" " ) ch = *"_";
       buff[len]   = ch;
       if ( flags & SHADOW_CHARS )
         write(p->fd, "*", 1);
