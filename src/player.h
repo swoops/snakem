@@ -3,9 +3,6 @@
 #define  MIN_IAC_REQ    2  /* require at least a few IAC chars to show you are using telnet (bot check) */
 #define  NO_FLIP_SPACE  4  /* don't s/ /_/  player names don't need spaces, I am paranoid, but msgs probabbly do */
 
-/* clean up a bot a bot earlier */
-void player_kill_bot(player *p);
-
 /* getch for a player socket */
 char player_getc(player *p);
 

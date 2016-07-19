@@ -10,9 +10,6 @@
 #include  "logging.h"
 #include  "menu.h"
 
-void player_kill_bot(player *p){
-}
-
 void player_unlock(player *p){
   /* should not unlock a player that is NULL? */
   if (p->flags & DEAD) server_log(ERROR, "unlocking a dead snake");
@@ -239,7 +236,7 @@ int check_spectator(player *p){
   char pass[MAX_PLAYER_NAME+1];
 
   /* password required */
-  if ( SERVER.spec_pass == NULL ){
+  if ( SERVER.spec_pass != NULL ){
     player_write(p, "\e[B\e[20Dpassword: ");
 
     if ( player_get_str(p, pass, sizeof(pass), SHADOW_CHARS) == 0 )
