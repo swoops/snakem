@@ -66,7 +66,7 @@ void debug_player_array(char *msg){
     server_log(INFO,"\t p[%d]: %p", i, SERVER.players[i]);
 }
 
-int serv_check_collisions(int head, char *name){
+int serv_check_collisions(player *p, int head){
   int i;
   serv_lock();
   for (i=0; i<=SERVER.last_player; i++){
@@ -78,7 +78,12 @@ int serv_check_collisions(int head, char *name){
         SERVER.players[i]->score += 100;
         show_score(SERVER.players[i]);
         pthread_mutex_unlock(&SERVER.players[i]->lock);
-        serv_notify_all(SERVER.players[i]->color, "%s killed %s ", SERVER.players[i]->name, name );
+
+        if ( SERVER.players[i] == p )
+          serv_notify_all(SERVER.players[i]->color, "%s killed himself", p->name );
+        else
+          serv_notify_all(SERVER.players[i]->color, "%s killed %s", SERVER.players[i]->name, p->name );
+
         return 1;
       }
     }

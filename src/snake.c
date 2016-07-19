@@ -13,6 +13,19 @@
 
 #define CAT_CODE  "\xf0\x9f\x90\xb1"
 
+char *MESSAGES[] = {
+  "No, houseboat, you forgot to add the C",
+  "I'm the best!!!",
+  "Mirupafshim",
+  "Swoops",
+  "Do a flip!",
+  "check this out n00bs!",
+  "Ctrl+] to talk",
+  "Take that causality!",
+  "What do you call the integral of 1/cabin?",
+  "log cabin?"
+};
+
 
 void draw_snake(player *p){
   int i;
@@ -55,6 +68,18 @@ int snake_control(player *p){
         case 'j':
         case 's':
           change_dir(p, DOWN);
+          break;
+        case '0': /* someone wants to send a messege */
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+          serv_notify_all(p->color, "%s: %s", p->name, MESSAGES[atoi(&ch)]);
           break;
         case 0x00:
           destroy_player(p);
@@ -243,7 +268,7 @@ void move_snake(player *p){
    * check pellet before "expensive" check of hitting itself
   */
   if ( head_num != serv_get_pellet() ){
-    if ( p->slen > 3 && serv_check_collisions(head_num, p->name) ){  /* players <3 invincible :) */
+    if ( p->slen > 3 && serv_check_collisions(p, head_num) ){  /* players <3 invincible :) */
       game_over(p);
       destroy_player(p);
     }
@@ -314,9 +339,9 @@ int snake_collision(player *p, int col){
 
   for (i=p->slen-1; i>=0; ){
     if ( num_to_cord(col, &pos1) != 1)
-      server_log(ERROR, "%s:%dPoint outside of bounsd", __FILE__, __LINE__);
+      server_log(ERROR, "%s:%d Point outside of bounsd", __FILE__, __LINE__);
     if ( num_to_cord(p->pix[(i+p->head)%p->slen], &pos2) != 1)
-      server_log(ERROR, "%s:%dPoint outside of bounsd", __FILE__, __LINE__);
+      server_log(ERROR, "%s:%d Point outside of bounsd", __FILE__, __LINE__);
 
     /* Manhattan/Taxi Cab distance */
     dist = abs(pos1.x-pos2.x)+ abs(pos1.y-pos2.y);

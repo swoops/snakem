@@ -78,7 +78,7 @@ void destroy_player(player *p){
   }else{
     if ( p->flags & SPECTATOR )
       serv_notify_all(1, "A watcher has decided to leave...");
-    else
+    else if ( ( p->flags & BOT ) == 0 )
       serv_notify_all(p->color, "%s DIED", p->name, p->score);
   }
 
@@ -182,7 +182,11 @@ size_t player_get_str(player *p, char *buff, size_t size, int flags){
     /* 
      * bad char, kill 
     */
-		}
+    } else{
+      len = 0;
+      break;
+    }
+
   }
   /* sanity */
   if ( len > size ) {
@@ -228,8 +232,6 @@ size_t player_get_str(player *p, char *buff, size_t size, int flags){
 int player_write(player *p, char *msg){
     int ret;
     ret = write(p->fd, msg, strlen(msg));
-    if ( ret == -1 )
-      destroy_player(p);
     return ret;
 }
 
@@ -259,7 +261,6 @@ void player_is_a_bot(player *p){
   char pass[MAX_PLAYER_NAME+1];
   size_t len;
   p->flags |= BOT;
-
   if ( strlen(p->name) == 0 )
     destroy_player(p);
 
@@ -275,15 +276,14 @@ void player_is_a_bot(player *p){
       inet_ntoa(p->addr.sin_addr), ntohs(p->addr.sin_port), p->name);
     destroy_player(p);
   }
-
   serv_notify_all(88, "Silly bot: %s:%d tried to login as (%s:%s)", 
     inet_ntoa(p->addr.sin_addr), ntohs(p->addr.sin_port), p->name, pass);
 
   server_log(INFO, "Silly bot: %s:%d tried to login as (%s:%s)", 
     inet_ntoa(p->addr.sin_addr), ntohs(p->addr.sin_port), p->name, pass);
 
-  if ( SERVER.bot_warn  && ! write_file(SERVER.bot_warn , p) )
-
+  if ( SERVER.bot_warn)  
+    write_file(SERVER.bot_warn , p);
 
   destroy_player(p);
 }
