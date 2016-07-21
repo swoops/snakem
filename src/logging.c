@@ -1,12 +1,14 @@
 #include  "data_types.h"
 #include  "logging.h"
 #include  "server.h"  
-#include  <stdarg.h>  /*va_start*/
-#include  <stdlib.h>  /*exit*/
-#include  <stdio.h>   /*exit*/
-#include  <errno.h>   /*strerror*/
-#include  <string.h>  /*strerror*/
-#include  <time.h>   /*time*/
+#include  <stdarg.h>    /*va_start*/
+#include  <stdlib.h>    /*exit*/
+#include  <stdio.h>     /*exit*/
+#include  <errno.h>     /*strerror*/
+#include  <string.h>    /*strerror*/
+#include  <time.h>      /*time*/
+#include  <execinfo.h>  /*backtrace*/
+
 
 
 /* TODO: add lock... because it writes in multiple stages */
@@ -56,8 +58,16 @@ void server_log(int flag, char *fmt, ...) {
 
 
   fflush(SERVER.log);
+  if ( flag & ( FATAL | ERROR ) ){
+    fprintf(SERVER.log, "=== Backtrace ===\n");
+    fflush(SERVER.log);
+    void *array[1024];
+    int s;
+    s = backtrace(array, 1024);
+    backtrace_symbols_fd(array, s, fileno(SERVER.log));
+    fprintf(SERVER.log, "=================\n");
+  } 
   if ( flag & FATAL ) exit(errno ? errno : -1);
-
 }
 
 void hexdump(char *str, size_t size){

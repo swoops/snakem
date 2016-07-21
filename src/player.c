@@ -29,7 +29,10 @@ void player_lock(player *p){
 
 char player_getc(player *p){
     char ch;
-    read(p->fd, &ch, 1);
+    ssize_t e;
+    e = read(p->fd, &ch, 1);
+    if ( e == -1 )
+      ch = 0x00;
     return ch;
 }
 
@@ -135,13 +138,14 @@ size_t player_get_str(player *p, char *buff, size_t size, int flags){
     */                           /* thx patrick */
 		}else if ( ( ch & 0xff ) == 0x7f && len > 0){  
       len--;
-      player_write(p, "\e[1D \e[1D");
+      if ( player_write(p, "\e[1D \e[1D") == -1 ) destroy_player(p);
     /*
      * ctrl+u
     */
 		}else if ( ( ch & 0xff ) == 0x15 ){  
       len = 0;
-      player_write(p, "\e[2K\e[20Dusername: ");
+      if (player_write(p, "\e[2K\e[20Dusername: ") == -1) 
+        destroy_player(p);
     /* 
      * IAC b/c they are using telnet 
     */

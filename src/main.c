@@ -86,6 +86,7 @@ int main(int argc, char *argv[]){
         if ( strlen(optarg) > MAX_PLAYER_NAME )
           server_log(FATAL, "%s [main] line: %d provided spectator name too big", __FILE__, __LINE__);
         SERVER.spec_name = optarg;
+        break;
       case 'z':
         if ( strlen(optarg) > MAX_PLAYER_NAME )
           server_log(FATAL, "%s [main] line: %d provided spectator name too big", __FILE__, __LINE__);
@@ -147,6 +148,7 @@ int main(int argc, char *argv[]){
 
   struct sockaddr_in host_addr;
   int sockfd, new_sockfd;  // Listen on sock_fd, new connection on new_fd
+  int yes = 1;
 
   change_signal();
   socklen_t sin_size;
@@ -157,6 +159,9 @@ int main(int argc, char *argv[]){
       server_log(FATAL, "creating socket");
 
   memset(&host_addr, 0, sizeof(host_addr) );
+
+  if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) != 0)
+    server_log(FATAL, "setting socket option SO_REUSEADDR");
 
   host_addr.sin_family = AF_INET;
   host_addr.sin_addr.s_addr = htons(INADDR_ANY);

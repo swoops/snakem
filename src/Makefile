@@ -1,15 +1,15 @@
 CC = gcc
 
-CFLAGS = -Wall
-# CFLAGS = -Wall -g3
+# CFLAGS = -Wall
+CFLAGS = -Wall -g3 -rdynamic
 
-LIBRARIES = pthread
+LIBRARIES = -lpthread
 TARGET = snakem
 
 all: $(TARGET)
 
 $(TARGET): movement.o menu.o snake.o  main.c 
-	$(CC) $(CFLAGS) -l $(LIBRARIES) server.o logging.o player.o movement.o menu.o snake.o -o ../$(TARGET) main.c
+	$(CC) $(CFLAGS) $(LIBRARIES) server.o logging.o player.o movement.o menu.o snake.o -o ../$(TARGET) main.c
 
 movement.o: movement.c 
 	$(CC) $(CFLAGS) -c movement.c 

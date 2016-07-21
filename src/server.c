@@ -138,6 +138,11 @@ int serv_del_player(player *p){
     server_log(FATAL, "[serv_del_player] SANITY: player list corrupted");
   }
 
+  server_log(INFO, "removed player num %d:%p from %s:%d", 
+    SERVER.last_player+1, p,
+    inet_ntoa(p->addr.sin_addr), ntohs(p->addr.sin_port)
+  );
+
   ret = SERVER.last_player;
   serv_unlock();
   return ret;
@@ -153,7 +158,10 @@ int serv_add_player(player *p){
 
   SERVER.last_player++;
 
-  server_log(INFO, "Adding player %d", SERVER.last_player);
+  server_log(INFO, "Adding player num %d:%p from %s:%d", 
+    SERVER.last_player, p,
+    inet_ntoa(p->addr.sin_addr), ntohs(p->addr.sin_port)
+  );
   SERVER.players[SERVER.last_player] = p;
   SERVER.players[SERVER.last_player+1] = NULL;
 
