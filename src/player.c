@@ -113,7 +113,7 @@ size_t player_get_str(player *p, char *buff, size_t size, int flags){
   char ch;
   while (len < size-1){
     ch =  player_getc(p);  
-    server_log(DEBUG, "[player_get_str] on char %d: 0x%02x", len, (ch & 0xff));
+    server_log(DEBUG, "[player_get_str] p:%p on char %d: 0x%02x", p, len, (ch & 0xff));
     /* 
      * valid characters add it on
     */
@@ -125,7 +125,7 @@ size_t player_get_str(player *p, char *buff, size_t size, int flags){
 							( ch == (int) *" " )
 
     ){
-      server_log(DEBUG, "[player_get_str] on char %d, ACCEPTED", len);
+      server_log(DEBUG, "[player_get_str] %p on char %d, ACCEPTED", p, len);
       if ( ! ( flags & NO_FLIP_SPACE ) && ch == (int) *" " ) ch = *"_";
       buff[len]   = ch;
       if ( flags & SHADOW_CHARS )
@@ -156,7 +156,7 @@ size_t player_get_str(player *p, char *buff, size_t size, int flags){
        * IAC: not ( WILL | WON'T | DO | DON'T  ) kick em ?
       */ 
       if ( ( ch & 0xff ) < 0xfa  || ( ch & 0xff ) > 0xfe ) { 
-        server_log(DEBUG, "[player_set_name] Player %p Got IAC 0x%02x, kicking", p, ch & 0xff); 
+        server_log(DEBUG, "[player_get_str] p:%p Got IAC 0x%02x, kicking", p, ch & 0xff); 
         len = 0;
         break;
       /* subnegociation (SB), go till subnegociation ends (se) */
@@ -164,21 +164,20 @@ size_t player_get_str(player *p, char *buff, size_t size, int flags){
         while ( 1 ){
           ch = player_getc(p);
           if ( (ch & 0xff ) != 0xf0 )
-            server_log(DEBUG, "[player_set_name] in negociation, got 0x%02x", ch & 0xff);
+            server_log(DEBUG, "[player_get_str] p:%p in negociation, got 0x%02x", p, ch & 0xff);
           else
             break;
         }
       /* IAC and valid? */
       }else{
-        server_log(DEBUG, "[player_set_name] %p sent IAC 0x%02x 0x%02x", p, ch & 0xff, player_getc(p) & 0xff);
+        server_log(DEBUG, "[player_get_str] %p sent IAC 0x%02x 0x%02x", p, ch & 0xff, player_getc(p) & 0xff);
       }
 
-    } else if ( (ch & 0xff) == 0x0d  || (ch & 0xff) == 0x00 ){   /* Terminating character, finish it up */
+    } else if ( (ch & 0xff) == 0x0d ){   /* Terminating character, finish it up */
       ch = player_getc(p);
-      server_log(DEBUG, "ending str, next char is: 0x%02x", ch & 0xff);
+      server_log(DEBUG, "p:%p ending str, next char is: 0x%02x", p, ch & 0xff);
       break;
-    } else if ( (ch & 0xff) == 0x0a ){   /* Terminating character, finish it up */
-      server_log(DEBUG, "ending str, next char is: 0x%02x", ch & 0xff);
+    } else if ( (ch & 0xff) == 0x0a || (ch & 0xff) == 0x00 ){   /* Terminating character, finish it up */
       break;
     /* 
      * bad char, kill 
