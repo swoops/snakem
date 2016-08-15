@@ -2,8 +2,6 @@
 #include  <stdlib.h>
 #include  <pthread.h>
 #include  "snake.h"
-#include  "data_types.h"
-#include  <unistd.h>      /*getopt*/
 #include  <string.h>      /*memset*/
 #include  <arpa/inet.h>   /*htons*/
 #include  <signal.h>      /*sigemptyset,sigaction*/
@@ -11,6 +9,8 @@
 #include  "player.h"
 #include  "logging.h"
 #include  "server.h"
+#include  "parse_config.h"
+#include  "data_types.h"
 
 void change_signal(){
   /**
@@ -25,117 +25,19 @@ void change_signal(){
     server_log(FATAL, "Could not change SIGPIPE singal");
 }
 
-void help_menu(char *p, int x){
-  fprintf(stderr, "%s: [-x <width> ] [ -y <height> ] \n\n", p);
-  fprintf(stderr, "\t-x: \ttotal width of board (default: 50)\n");
-  fprintf(stderr, "\t-y: \ttotal height of board (default: width)\n");
-  fprintf(stderr, "\t-p: \tport to listen on (default 4444)\n");
-  fprintf(stderr, "\t-l: \tlog file (default stderr)\n");
-  fprintf(stderr, "\t-i: \tspeed increase for pellets (default 1000)\n");
-  fprintf(stderr, "\t-s: \tHigh Score to start with... better logging later :)\n");
-  fprintf(stderr, "\t-n: \tName of player with high score (default Nobody)\n");
-  fprintf(stderr, "\t-b: \tFile to be printed as the start banner\n");
-  fprintf(stderr, "\t-w: \tFile to be printed as the warning for bots\n");
-  fprintf(stderr, "\t-m: \tMax number of players\n");
-  fprintf(stderr, "\t-d: \tdebug messages in log\n");
-  fprintf(stderr, "\t-c: \tspectator account name\n");
-  fprintf(stderr, "\t-z: \tspectator password\n");
-  fprintf(stderr, "\n");
-  exit(x);
-}
 
 int main(int argc, char *argv[]){
   /* TODO: put this junk in a function in another file */
-  int ch;
   init_server();
   DEBUG_ENABLED = 0;
 
-  while ((ch = getopt (argc, argv, "hp:x:y:b:i:l:w:s:n:atrdc:z:")) != -1){
-    switch (ch) {
-      case 'h':
-        help_menu(argv[0], 0);
-        break;
-      case 'd':
-        DEBUG_ENABLED = 1;
-        break;
-      case 'a':
-        SERVER.flags |= ANON_MODE;
-        break;
-      case 'r':
-        SERVER.flags |= RANDOM_MODES;
-        break;
-      case 't':
-        SERVER.flags |= TRASH_MODE;
-        break;
-      case 'b':
-        SERVER.start_banner = optarg;
-        break;
-      case 'w':
-        SERVER.bot_warn = optarg;
-        break;
-      case 'p':
-        SERVER.port = atoi(optarg);
-        break;
-      case 'm':
-        SERVER.max_players = atoi(optarg);
-        break;
-      case 's':
-        SERVER.high_score = atoi(optarg);
-        break;
-      case 'c':
-        if ( strlen(optarg) > MAX_PLAYER_NAME )
-          server_log(FATAL, "%s [main] line: %d provided spectator name too big", __FILE__, __LINE__);
-        SERVER.spec_name = optarg;
-        break;
-      case 'z':
-        if ( strlen(optarg) > MAX_PLAYER_NAME )
-          server_log(FATAL, "%s [main] line: %d provided spectator name too big", __FILE__, __LINE__);
-        SERVER.spec_pass = optarg;
-        break;
-      case 'n':
-        if ( strlen(optarg) > MAX_PLAYER_NAME )
-          server_log(FATAL, "%s [main] line: %d provided name too big", __FILE__, __LINE__);
-
-        free(SERVER.hs_name);
-
-        if ( ( SERVER.hs_name = strdup(optarg) ) == NULL )
-          server_log(FATAL, "%s [main] line: %d strdup() failed", __FILE__, __LINE__);
-        break;
-      case 'l':
-        if ( ( SERVER.log = fopen(optarg, "a") ) == NULL ){
-          server_log(FATAL, "%s [main] line: %d could not open log file", __FILE__, __LINE__);
-          help_menu(argv[0], 1);
-        }
-        break;
-      case 'i':
-        /* TODO: check bounds */
-        SERVER.t_inc = atoi(optarg);
-        break;
-      case 'x':
-        SERVER.max_x = atoi(optarg);
-        if ( SERVER.max_x < 10 || SERVER.max_x > 500 ){
-          fprintf(stderr, "[!] -x not in range\n");
-          help_menu(argv[0], 1);
-        }
-        break;
-      case 'y':
-        SERVER.max_y = atoi(optarg);
-        if ( SERVER.max_y < 10 || SERVER.max_y > 500 ){
-          fprintf(stderr, "[!] -y not in range\n");
-          help_menu(argv[0], 1);
-        }
-        break;
-      case '?':
-        fprintf(stderr, "misunderstood params\n");
-        help_menu(argv[0], 1);
-        break;
-      default:
-        fprintf(stderr, "dont understand something\n");
-        help_menu(argv[0], 2);
-        break;
-    }
+  if ( argc == 2 ){
+    if ( parse_file(argv[1]) != 0 )
+      server_log(FATAL, "Could not read config file!!!");
+  }else{
+    if ( parse_file("./default.conf") != 0 )
+      server_log(FATAL, "Could not read config file!!!");
   }
-
 
   if ( SERVER.max_x == 0 || SERVER.max_x < 10 )
     SERVER.max_x =  80;

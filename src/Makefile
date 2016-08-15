@@ -8,8 +8,8 @@ TARGET = snakem
 
 all: $(TARGET)
 
-$(TARGET): movement.o menu.o snake.o  main.c 
-	$(CC) $(CFLAGS) $(LIBRARIES) server.o logging.o player.o movement.o menu.o snake.o -o ../$(TARGET) main.c
+$(TARGET): parse_config.o movement.o menu.o snake.o  main.c 
+	$(CC) $(CFLAGS) $(LIBRARIES) parse_config.o server.o logging.o player.o movement.o menu.o snake.o -o ../$(TARGET) main.c
 
 movement.o: movement.c 
 	$(CC) $(CFLAGS) -c movement.c 
@@ -26,6 +26,9 @@ server.o:  server.h server.c logging.o
 menu.o:  menu.c movement.o player.o
 	$(CC) $(CFLAGS) -c menu.c 
 
+parse_config.o:  parse_config.c data_types.h 
+	$(CC) $(CFLAGS) -c parse_config.c 
+
 snake.o:  snake.c snake.h menu.o movement.o  player.o logging.o
 	$(CC) $(CFLAGS) -c snake.c 
 
@@ -36,5 +39,5 @@ snake.o:  snake.c snake.h menu.o movement.o  player.o logging.o
 # 	rm /opt/$(TARGET)
 
 clean: 
-	rm ../$(TARGET) server.o movement.o menu.o snake.o player.o logging.o
+	rm ../$(TARGET) server.o movement.o menu.o snake.o player.o logging.o parse_config.o
 
