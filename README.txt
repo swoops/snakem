@@ -16,18 +16,18 @@ snakem
    see the default.conf file for more information
 
 TODO:
-  handle ctrl+c to clean up sockets nicely...
+  handle server flags in config
   add a high score log
-  add "A Challenger Approaches" nag
+  handle ctrl+c to clean up sockets nicely...
   add High Score screen
   add mods: 
-    - invisibo
     - techno snake
     - invincible
     - speed
   add mod nag
   add annoying banner to README
   check int overflow on player speed changes
+  add "A Challenger Approaches" nag
 
 Warranty:
   There is no warranty.  You should be excited if it compiles.  At worst

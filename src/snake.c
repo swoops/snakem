@@ -89,6 +89,7 @@ int snake_control(player *p){
           player_unlock(p);
     }
   }
+  serv_notify_all(p->color, "%s left the game", p->name);
   clear_screen(p);
   destroy_player(p);
   return 0;
@@ -100,7 +101,7 @@ int snake_control(player *p){
  * player_init starts the player with min slen, this keeps the server from
  * attempting to find collisions... however it would be better to make a
  * spectator struct that does not contain as much needless junk, pixels, slen,
- * head, ect. Don't put that spectator inside of the list of players, destroy
+ * head, ect. Didn't put that spectator inside of the list of players, destroy
  * him differently, and make sure server_write loops through the spectators for
  * write also.  For now this hack *works* but by accident. 
  */ 
@@ -259,6 +260,7 @@ void move_snake(player *p){
 
   // hit wall?
   if ( !head_num ) {
+    serv_notify_all(p->color, "%s Hit the wall", p->name);
     game_over(p);
     destroy_player(p);
   }
@@ -287,14 +289,27 @@ void move_snake(player *p){
 
   }else{ /* snake ate a pellet */
     grow_snake(p);
-    if ( serv_get_flags() & RANDOM_MODES  && random() % 100 == 0){
-      int mods = serv_random_flags(); 
-      if ( mods & ( ANON_MODE | TRASH_MODE ) ){
-        serv_notify_all(p->color, "MODS %s%s enabled, THANKS %s!", 
-              (TRASH_MODE & mods) ?  "TRASH "  : "",
-              (ANON_MODE & mods)  ?  "ANON  "  : "",
-              p->name
-            );
+    int serv_mods = serv_get_flags();
+    if ( serv_mods ){
+      if ( p->flags & P_INVISIBO ){
+        if ( random() % 50 == 0 ){
+          p->flags ^= P_INVISIBO;
+          serv_notify_all(p->color, "%s is no longer INVISIBO!!!", p->name);
+        }
+      } else if ( random() % 150 == 0 ){
+          p->flags |= P_INVISIBO;
+          serv_notify_all(p->color, "%s is INVISIBO!!!", p->name);
+        }
+
+      if ( random() % 100 == 0 && serv_mods & RANDOM_MODES ){
+        int mods = serv_random_flags();
+        if ( mods & ( ANON_MODE | TRASH_MODE ) ){
+          serv_notify_all(p->color, "MODS %s%s enabled, THANKS %s!", 
+                (TRASH_MODE & mods) ?  "TRASH "  : "",
+                (ANON_MODE & mods)  ?  "ANON  "  : "",
+                p->name
+          );
+        }
       }
     }
     serv_put_pellet(NULL);
@@ -303,10 +318,11 @@ void move_snake(player *p){
     if ( taili < 0 ) taili = taili + p->slen;
   }
 
+  /* put head down */
   if (SERVER.flags & ANON_MODE)
-    place_str(phead.x, phead.y, NULL, "\e[48;5;%dm \e[0m", 10);
+    place_str(phead.x, phead.y, ( p->flags & P_INVISIBO ) ? p : NULL, "\e[48;5;%dm \e[0m", 10);
   else
-    place_str(phead.x, phead.y, NULL, "\e[48;5;%dm%c\e[0m", p->color, p->name[head_num % p->nlen]);
+    place_str(phead.x, phead.y, ( p->flags & P_INVISIBO ) ? p : NULL, "\e[48;5;%dm%c\e[0m", p->color, p->name[head_num % p->nlen]);
 
   /* update memory struct */
   player_lock(p);

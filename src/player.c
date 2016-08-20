@@ -101,8 +101,6 @@ void destroy_player(player *p){
   }else{
     if ( p->flags & SPECTATOR )
       serv_notify_all(1, "A watcher has decided to leave...");
-    else if ( ( p->flags & BOT ) == 0 )
-      serv_notify_all(p->color, "%s DIED", p->name, p->score);
   }
 
   if ( p->name == NULL ) 

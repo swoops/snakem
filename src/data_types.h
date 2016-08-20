@@ -17,14 +17,16 @@
 #define  HOLDD  16  //  \e[1D
 
 /* for snake flags */
-#define DEAD       1    /* snake is dead, clean him off the road */
-#define KILL       2    /* snake is dead, clean him off the road */
-#define BOT        4    /* this player is a bot trying to log in */
-#define SPECTATOR  8    /* This player is just here to watch */
+#define DEAD         1    /* snake is dead, clean him off the road */
+#define KILL         2    /* snake is dead, clean him off the road */
+#define BOT          4    /* this player is a bot trying to log in */
+#define SPECTATOR    8    /* This player is just here to watch */
+#define P_INVISIBO  16    /* Where did he go, this player is invisibo */
 
 #define ANON_MODE        4
 #define TRASH_MODE       8
 #define RANDOM_MODES    16
+#define S_INVISIBO      32    /* players can be invisibo */
 #define ALL_MODES ( ANON_MODE | TRASH_MODE )
 
 /* largets player name */

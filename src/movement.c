@@ -22,6 +22,7 @@ void go_home_cursor(player *p){
     serv_write(GO_HOME_STR);
 }
 
+/* if player is NULL write to EVERYONE */
 void place_str(int x, int y, player *p, char *fmt, ...) {
   char buff[MAX_BUFF_SIZE];
   char *ptr = buff;

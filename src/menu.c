@@ -55,7 +55,7 @@ int write_file(char *fname, player *p){
 
     if (bytes_read < 0) {
       server_log(ERROR, "[write_file] Failed to read from file %s", fname);
-      destroy_player(p);
+      return 1;
     }
 
     bookmark = buff;
