@@ -82,6 +82,10 @@ int main(int argc, char *argv[]){
   if ( pthread_attr_setdetachstate(&ATTR, PTHREAD_CREATE_DETACHED) != 0 )
     server_log(FATAL, "[main] %s:%d Could not set attributes to detatch", __FILE__, __LINE__);
 
+  struct timeval tv;
+  tv.tv_sec = 1; 
+  tv.tv_usec = 30;  
+
   while(1) {
     /* if server is full don't go taking more connections... */
     while( serv_full() ) sleep(1);
@@ -94,6 +98,13 @@ int main(int argc, char *argv[]){
 
     server_log(INFO, "New connection from %s:%d", inet_ntoa(play->addr.sin_addr), ntohs(play->addr.sin_port));
     play->fd = new_sockfd;
+
+    /* set a timeout on socket */
+    if (setsockopt(play->fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(struct timeval)) < 0)
+      server_log(FATAL, "%s:%d [main] SO_RCVTIMEO", __FILE__, __LINE__);
+    if (setsockopt(play->fd, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(struct timeval)) < 0)
+      server_log(FATAL, "%s:%d [main] SO_SNDTIMEO" , __FILE__, __LINE__);
+
 
     /* while() sleep() loop should keep this from failing so if it does die */
     if ( serv_add_player(play) )

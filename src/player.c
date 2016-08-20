@@ -4,6 +4,7 @@
 #include  <sys/socket.h>  /*inet_ntoa*/
 #include  <netinet/in.h>  /*inet_ntoa*/
 #include  <arpa/inet.h>   /*inet_ntoa*/
+#include <errno.h>        /*errno_variable*/
 #include  "data_types.h"
 #include  "server.h"
 #include  "player.h"
@@ -29,11 +30,33 @@ void player_lock(player *p){
 
 char player_getc(player *p){
     char ch;
-    ssize_t e;
-    e = read(p->fd, &ch, 1);
-    if ( e == -1 )
-      ch = 0x00;
-    return ch;
+    size_t i;
+    /* 
+     * TODO: make this configurable
+     * at most let someone sit connected 8 hours assuming the socket timeout is
+     * 30s we get (60*60*8)/30 =  960 intervals to make 8 hours
+    */
+    for(i=0; i<960; i++){
+      /* all is well, return */
+      if ( read(p->fd, &ch, 1) != -1 )
+        return ch;
+
+      /* the user just not ready, give him time */
+      if ( errno == EAGAIN  )
+        continue;
+
+      /* something else, poop em */
+      server_log(ERROR, "%s:%d [player_getc] Timeout passed and socketerr for player \"%s\":%p:", 
+        __FILE__, __LINE__,
+        (p->name) ? p->name : "", p
+      );
+      return 0x00;
+    }
+    server_log(ERROR, "%s:%d [player_getc] Timeout passed %zu times player \"%s\":%p:", 
+      __FILE__, __LINE__,
+      i, (p->name) ? p->name : "", p
+    );
+    return 0x00;
 }
 
 void destroy_player(player *p){
