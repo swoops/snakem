@@ -43,6 +43,9 @@ typedef struct {
   int x,y;
 } point;
 
+typedef struct{
+} bad_player_names;
+
 
 /* everying in here is unique to each playser */
 typedef struct {
@@ -84,12 +87,15 @@ typedef struct {
   int last_player;              /* index of last player */
   pthread_mutex_t lock;         /* lock for threading */
   char * hs_name;               /* name of player with high score */
+  size_t num_bnames;                  /* number of bad player names */
+  char **bnames;
 
 } server;
 
 
 /* global server struct */
 server SERVER;
+
 /* all threads get the same attributes */
 pthread_attr_t ATTR;
 int DEBUG_ENABLED;  /* for debugging of course */

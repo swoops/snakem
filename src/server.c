@@ -28,6 +28,9 @@ void init_server(){
   SERVER.last_player   =  -1;
   SERVER.max_players   =  5;
 
+  SERVER.num_bnames    =  0;
+  SERVER.bnames        =  NULL;
+
   SERVER.hs_name   = strdup("Nobody");
 
   SERVER.spec_name = NULL;

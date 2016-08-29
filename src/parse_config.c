@@ -40,9 +40,11 @@ int set_params(char *buff, size_t buff_len, size_t line){
   }
 
   if       ( strncmp(key, "max_y",        key_len) == 0 ){
-		SERVER.max_y = atoi(value);
+		if ( (SERVER.max_y = atoi(value)) <= 0 )
+      return 1;
   }else if ( strncmp(key, "max_x",        key_len) == 0 ){
-		SERVER.max_x = atoi(value);
+		if ( (SERVER.max_x = atoi(value)) <= 0 )
+      return 1;
   }else if ( strncmp(key, "debug",        key_len) == 0 ){
     if ( strcmp(value, "yes") == 0 )
       DEBUG_ENABLED = 1;
@@ -51,14 +53,18 @@ int set_params(char *buff, size_t buff_len, size_t line){
     else
       server_log(FATAL, "%s:%d [set_params] invalid debug value (must be yes/no)" __FILE__, __LINE__);
   }else if ( strncmp(key, "port",         key_len) == 0 ){
-		SERVER.port = atoi(value);
+		if ( (SERVER.port = atoi(value)) <= 0 )
+      return 1;
   }else if ( strncmp(key, "high_score",   key_len) == 0 ){
 		SERVER.high_score = atoi(value);
+  }else if ( strncmp(key, "game_mods",   key_len) == 0 ){
+		SERVER.flags = atoi(value);
   }else if ( strncmp(key, "t_inc",        key_len) == 0 ){
-		SERVER.t_inc = atoi(value);
+		if ( (SERVER.t_inc = atoi(value)) <= 0 )
+      return 1;
   }else if ( strncmp(key, "max_players",  key_len) == 0 ){
 		SERVER.max_players = atoi(value);
-    if ( SERVER.max_players <= 0 )
+		if ( (SERVER.max_players= atoi(value)) <= 0 )
       server_log(FATAL, "%s:%d [set_params] invalid number of players" __FILE__, __LINE__);
   }else if ( strncmp(key, "log",          key_len) == 0 ){
     if ( SERVER.log != stderr ) {
@@ -96,21 +102,96 @@ int set_params(char *buff, size_t buff_len, size_t line){
   return 0;
 
 }
+void parse_add_str(char ***array, size_t *size, size_t max_size, char *value, int line){
+  if ( *size == 0 ){
+    /* first call was to realloc, nothing to do, return */
+    if ( value == NULL )  
+      server_log(FATAL, "%s:%d [parse_add_str] Last call was the first call, line: %d!!! ", __FILE__, __LINE__, line);
+
+    *array = (char **) malloc(sizeof(char *) * max_size ); 
+    if ( *array == NULL )
+      server_log(FATAL, "%s:%d [parse_add_str] malloc failed, line %d:", __FILE__, __LINE__, line);
+
+  }else if ( value == NULL ){
+    /* should be last call */
+    if ( ( *array = realloc(*array, sizeof(char *) * (*size)) ) == NULL )
+      server_log(FATAL, "%s:%d [parse_add_str] realloc failed, line: %d!!! ", __FILE__, __LINE__, line);
+    return ;
+  }
+
+  if ( *size >= max_size )
+    server_log(FATAL, "%s:%d [parse_add_str] too many values, line %d:", __FILE__, __LINE__, line);
+
+
+  char * ptr;
+  ptr = strdup(value);
+  if ( ptr == NULL )
+    server_log(FATAL, "%s:%d [parse_add_str] could not get memory for value \"%s\", line %d:", __FILE__, __LINE__, value, line);
+
+   (*array)[(*size)++] = ptr; 
+}
+
+void iter_param_list(FILE *fp, char *name, int *line){
+  char buff[MAX_CONFIG_LINE_LEN];
+  char *** key;
+  size_t *size;
+  size_t max_size = 128;
+  long pos = ftell(fp);
+  char * finger;
+  size_t buff_len;
+
+  if ( strcmp(name, "bad_names") == 0 ){
+    key =  &SERVER.bnames;
+    size = &SERVER.num_bnames;
+  } else{
+    server_log(FATAL, "Unreconised list name %s on line %zu", name, *line);
+  }
+
+  /* 
+   * TODO: this is pretty much seen twice, make it seen once in a nice function
+   * :)
+  */
+	while (!feof(fp) && ( fgets(buff, sizeof(buff), fp) != (char*) NULL) && (!ferror(fp))) {
+    finger = skip_left_pad(buff);
+
+    /* skip blank lines */
+		if ((*finger == '\r') || (*finger == '\n') || (*finger == '#')) continue;
+
+    /* line does not start with space, so end the list */
+    if ( finger == buff ){
+      parse_add_str(key, size, max_size,  NULL, *line);
+      fseek(fp, pos, SEEK_SET);
+      return ;
+    }
+
+    /* continuing in list, so update info */
+    *line = *line + 1;
+    pos = ftell(fp);
+
+    if ( (buff_len = strlen(buff) ) == sizeof(buff) - 1 )
+      server_log(FATAL,"%s:%d [parse_file] line %d too long", __FILE__, __LINE__, *line);
+
+    if ( buff[buff_len-1] == '\n' )
+      buff[--buff_len] = '\x00';
+    else
+      server_log(FATAL, "%s:%d [parse_file] line %d did not find a new line", __FILE__, __LINE__, *line);
+
+    parse_add_str(key, size, max_size, finger, *line);
+  }
+}
 
 int parse_file(char *fname){
   FILE * fp; 
   char buff[MAX_CONFIG_LINE_LEN];
-  size_t buff_len, finger_len;
+  size_t buff_len;
   int line = 0;
   char *finger; /* points to where you are on the line */
 
   /* return code, 0 => good */
   int ret = 0; 
 
-  if ( (fp = fopen(fname, "r")) == NULL ){
-    perror("file open failed: ");
-    return -1;
-  }
+  if ( (fp = fopen(fname, "r")) == NULL )
+    server_log(FATAL, "[parse_file] file open failed: ");
   
   /* 
    * much of the following is inspired (or maybe stolen?) from, the FreeRadIUS
@@ -127,20 +208,21 @@ int parse_file(char *fname){
 		 *	Skip blank lines and comments.
 		 */
 		if ((*finger == '\r') || (*finger == '\n') || (*finger == '#')) continue;
+    if ( finger != buff )
+      server_log(FATAL,"%s:%d [parse_file] line %zu, char %zu: starts with  white space \"%s\"", __FILE__, __LINE__,  line, (size_t) (finger - buff), buff);
 
-    if ( (buff_len = strlen(buff) ) == sizeof(buff) - 1 ){
+    if ( (buff_len = strlen(buff) ) == sizeof(buff) - 1 )
       server_log(FATAL,"[parse_file] line %zu too long", line);
-      ret =  -2;
-      break;
-    }
 
     /* remove new line char */
     if ( buff[buff_len-1] == '\n' )
       buff[--buff_len] = '\x00';
+    else
+      server_log(FATAL, "[parse_file] line %zu did not find a new line", line);
 
-    finger_len = buff_len - ( finger - buff );
-
-    if ( set_params(finger, finger_len, line) != 0 ){
+    if ( strncmp(buff, "list",4) == 0  ){
+      iter_param_list(fp, skip_left_pad( buff+4), &line);
+    }else  if ( set_params(buff, buff_len, line) != 0 ){
       ret = -1;
       break;
     }

@@ -83,8 +83,8 @@ int main(int argc, char *argv[]){
     server_log(FATAL, "[main] %s:%d Could not set attributes to detatch", __FILE__, __LINE__);
 
   struct timeval tv;
-  tv.tv_sec = 1; 
-  tv.tv_usec = 30;  
+  tv.tv_sec = 180; 
+  tv.tv_usec = 0;  
 
   while(1) {
     /* if server is full don't go taking more connections... */

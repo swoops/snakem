@@ -21,7 +21,7 @@ void player_unlock(player *p){
 
 void player_lock(player *p){
   pthread_mutex_lock(&p->lock);
-  if (p->flags & ( DEAD | KILL )){/* IT'S DEAD!.. WILL!!! || kill it */
+  if (p->flags & ( DEAD | KILL )){/* IT'S DEAD!.. WILL!!! kill it */
     pthread_mutex_unlock(&p->lock);
     destroy_player(p);
   } 
@@ -30,32 +30,52 @@ void player_lock(player *p){
 
 char player_getc(player *p){
     char ch;
+    int resp = 0;
     size_t i;
+
     /* 
-     * TODO: make this configurable
-     * at most let someone sit connected 8 hours assuming the socket timeout is
-     * 30s we get (60*60*8)/30 =  960 intervals to make 8 hours
+    * TODO: make this configurable
+    * 60/3*8 = (min/h)/(socket timeout)(8 hours) = 160 number of iterations
+    * before you get to 8 hours, no one needs to  spectate for 8 hours
     */
-    for(i=0; i<960; i++){
-      /* all is well, return */
-      if ( read(p->fd, &ch, 1) != -1 )
-        return ch;
+    for(i=0; i<160; i++){
+      if ( read(p->fd, &ch, 1) != -1 ) return ch;
 
-      /* the user just not ready, give him time */
-      if ( errno == EAGAIN  )
+      if ( errno != EAGAIN  ){
+        /* something bad? */
+        server_log(ERROR, "%s:%d [player_getc] Timeout passed and socketerr for player \"%s\":%p:", 
+          __FILE__, __LINE__,
+          (p->name != NULL) ? p->name : "", p
+        );
+        return 0x00;
+      }
+
+      /* please respond */
+      player_write(p, 
+        "\xff\xfb\xf6" /* IAC WILL AYT*/
+      ); 
+
+      if ( read(p->fd, &resp, 3) < 0 )
+        return 0x00; /* enough waiting */
+
+      /* did they answer politely? */
+      if ( resp == 0xf6feff ){
+        printf("got proper response, waiting longer %zu", i);
         continue;
-
-      /* something else, poop em */
-      server_log(ERROR, "%s:%d [player_getc] Timeout passed and socketerr for player \"%s\":%p:", 
-        __FILE__, __LINE__,
-        (p->name) ? p->name : "", p
-      );
-      return 0x00;
+      }else{
+        server_log(ERROR, "%s:%d [player_getc] Player \"%s\":%p did not respond to AYT properly (resp = 0x%0x)!", 
+          __FILE__, __LINE__,
+          (p->name != NULL) ? p->name : "", p, resp
+        );
+        return 0x00;
+      }
     }
-    server_log(ERROR, "%s:%d [player_getc] Timeout passed %zu times player \"%s\":%p:", 
+    server_log(ERROR, "%s:%d [player_getc] Player \"%s\":%p was hanging out far too long %zu iterations", 
       __FILE__, __LINE__,
-      i, (p->name) ? p->name : "", p
+      (p->name != NULL) ? p->name : "", p,
+      i
     );
+
     return 0x00;
 }
 
@@ -344,18 +364,12 @@ int player_set_name(player *p){
   if ( SERVER.spec_name && strcmp(p->name, SERVER.spec_name) == 0 )
     return check_spectator(p);
 
-  /* dumb bot trying to get lucky... I am not that type of game! */
-  if ( len > 4 ){
-    if (len == 6 && strcmp("888888",  p->name) == 0)   player_is_a_bot(p);
-    if (len == 6 && strcmp("nobody",  p->name) == 0)   player_is_a_bot(p);
-    if (len == 5 && strcmp("admin", p->name) == 0)     player_is_a_bot(p);
-    if (len == 5 && strcmp("guest", p->name) == 0)     player_is_a_bot(p);
-    if (len == 7 && strcmp("support", p->name) == 0)   player_is_a_bot(p);
-  }else{
-    if (len == 4 && strcmp("ubnt",  p->name) == 0)     player_is_a_bot(p);
-    if (len == 4 && strcmp("root",  p->name) == 0)     player_is_a_bot(p);
-    if (len == 2 && strcmp("sa",    p->name) == 0)     player_is_a_bot(p);
-  }
+  /* dumb bot trying to get lucky... I am not that type of game! */ 
+  size_t i;
+  for (i=0; i<SERVER.num_bnames; i++)
+    if ( strcmp(SERVER.bnames[i], p->name) == 0){
+      player_is_a_bot(p);
+    }
 
   /* you got here, all is well */
   p->nlen = len;
