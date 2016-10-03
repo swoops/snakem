@@ -11,7 +11,7 @@ char * skip_left_pad(char * buff);
 /*
  * iterate through a list of items in the config setting values
 */
-int iter_param_list(FILE *fp, char *name, int *line);
+void iter_param_list(FILE *fp, char *name, int *line);
 /*
  * set SERVER params given a line from the config file
 */
@@ -22,3 +22,11 @@ int set_params(char *buff, size_t buff_len, size_t line);
 int parse_file(char *fname);
 
 void parse_add_str(char ***array, size_t *size, size_t max_size, char *value, int line);
+
+/*
+ * top down merge sort a char ** containing strings.  
+ *     sizeof(old) == sizeof(new) == size 
+ * for this to work.  This returns a ptr to either old or new.
+ * no buffers are creaetd or removed by this function
+*/
+char ** merge_sort_str(char **old, char **new, size_t size);

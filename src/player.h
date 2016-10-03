@@ -6,6 +6,13 @@
 /* getch for a player socket */
 char player_getc(player *p);
 
+/* 
+ * binary search for string needle in the list of illegal player names in the
+ * SERVER.bnames.  Bad names original obtained from config file and should be
+ * sorted.
+*/
+int player_bin_bad_name_check(char *needle);
+
 /* ask for and set name of snake */
 int player_set_name(player *p);
 

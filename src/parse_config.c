@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include  "parse_config.h"
 #include  "logging.h"
 #include  "data_types.h"
 
@@ -135,34 +136,34 @@ void iter_param_list(FILE *fp, char *name, int *line){
   char buff[MAX_CONFIG_LINE_LEN];
   char *** key;
   size_t *size;
-  size_t max_size = 128;
+  size_t max_size;
   long pos = ftell(fp);
   char * finger;
   size_t buff_len;
+  unsigned int sorted = 0;
 
   if ( strcmp(name, "bad_names") == 0 ){
     key =  &SERVER.bnames;
     size = &SERVER.num_bnames;
+    max_size = 128; 
+    sorted = 1;
   } else{
     server_log(FATAL, "Unreconised list name %s on line %zu", name, *line);
   }
 
   /* 
-   * TODO: this is pretty much seen twice, make it seen once in a nice function
-   * :)
+   * TODO: next line is pretty much seen twice, make it seen once in a nice
+   * function :) 
   */
 	while (!feof(fp) && ( fgets(buff, sizeof(buff), fp) != (char*) NULL) && (!ferror(fp))) {
     finger = skip_left_pad(buff);
 
     /* skip blank lines */
-		if ((*finger == '\r') || (*finger == '\n') || (*finger == '#')) continue;
+		if ((*finger == '\r') || (*finger == '\n') || (*finger == '#')) 
+      continue;
 
     /* line does not start with space, so end the list */
-    if ( finger == buff ){
-      parse_add_str(key, size, max_size,  NULL, *line);
-      fseek(fp, pos, SEEK_SET);
-      return ;
-    }
+    if ( finger == buff ) break;
 
     /* continuing in list, so update info */
     *line = *line + 1;
@@ -178,6 +179,55 @@ void iter_param_list(FILE *fp, char *name, int *line){
 
     parse_add_str(key, size, max_size, finger, *line);
   }
+
+  /* finished up, clean things up */
+  parse_add_str(key, size, max_size,  NULL, *line);
+  fseek(fp, pos, SEEK_SET);
+
+  /* sort the array alphabeticly? */
+  if ( *size == 0 || sorted == 0 ) 
+    return;
+
+  /* scratch buffer for sorting */
+  char **ptr;
+  if ( ( ptr = calloc(*size, sizeof(char *)) ) == NULL ) 
+    server_log(FATAL, 
+      "%s:%d [parse_file] calloc returned NULL",
+      __FILE__, __LINE__
+    );
+
+  if ( ptr == merge_sort_str(*key, ptr, *size) ){
+    free(*key);
+    *key = ptr;
+  }else{
+    free(ptr);
+  }
+}
+
+char ** merge_sort_str(char **old, char **new, size_t size){
+  /* always switch two buffers */
+  if ( size == 1 ) {
+    new[0] = old[0];
+    return new;
+  }
+
+  size_t lsize =  size/2;
+  size_t rsize = size - lsize;
+
+  char **left  = merge_sort_str(old, new, lsize);
+  char **right = merge_sort_str(old+lsize, new+lsize, rsize);
+  char **ret = (left == old) ? new : old;
+
+  size_t i; 
+  size_t li=0,ri=0;
+  for (i=0; i<size; i++) /* rsize should be bigger, check the assert above */
+    if ( li == lsize || ( ri != rsize &&  strcmp(right[ri], left[li]) < 0 ))
+      ret[i] = right[ri++];
+    else
+      ret[i] = left[li++];
+
+  return ret;
+
 }
 
 int parse_file(char *fname){

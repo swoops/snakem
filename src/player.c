@@ -59,10 +59,7 @@ char player_getc(player *p){
         return 0x00; /* enough waiting */
 
       /* did they answer politely? */
-      if ( resp == 0xf6feff ){
-        printf("got proper response, waiting longer %zu", i);
-        continue;
-      }else{
+      if ( resp != 0xf6feff ){
         server_log(ERROR, "%s:%d [player_getc] Player \"%s\":%p did not respond to AYT properly (resp = 0x%0x)!", 
           __FILE__, __LINE__,
           (p->name != NULL) ? p->name : "", p, resp
@@ -328,6 +325,35 @@ void player_is_a_bot(player *p){
 
   destroy_player(p);
 }
+int player_bin_bad_name_check(char *needle){
+  if ( SERVER.num_bnames == 0 ) return 0;
+
+  size_t start = 0;
+  size_t end = SERVER.num_bnames-1;
+  size_t piv = SERVER.num_bnames/2;
+  int cmp;
+
+  for(;;){
+    cmp = strcmp(SERVER.bnames[piv], needle);
+
+    if ( cmp == 0 ) 
+      return 1; /* found it */
+    if ( start >= end ) 
+      break;
+
+    if ( cmp > 0 ){ 
+      /* look in upper subset */
+      if ( piv == 0 ) break;
+      end = piv-1;
+    }else {
+      /* look in lower subset */
+      if ( piv == SERVER.num_bnames-1 ) break;
+      start = piv+1;
+    }
+    piv = ( end + 1 + start ) /2;
+  }
+  return 0;
+}
 
 /* should not nead locks, 1 thread at this point */
 int player_set_name(player *p){
@@ -365,11 +391,8 @@ int player_set_name(player *p){
     return check_spectator(p);
 
   /* dumb bot trying to get lucky... I am not that type of game! */ 
-  size_t i;
-  for (i=0; i<SERVER.num_bnames; i++)
-    if ( strcmp(SERVER.bnames[i], p->name) == 0){
+  if ( player_bin_bad_name_check(p->name) )
       player_is_a_bot(p);
-    }
 
   /* you got here, all is well */
   p->nlen = len;

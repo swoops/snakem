@@ -43,9 +43,6 @@ typedef struct {
   int x,y;
 } point;
 
-typedef struct{
-} bad_player_names;
-
 
 /* everying in here is unique to each playser */
 typedef struct {
