@@ -16,11 +16,10 @@ snakem
    see the default.conf file for more information
 
 TODO:
+  add High Score screen
   handle server flags better in config
   add a high score log
-  binary search for bad usernames
   handle ctrl+c to clean up sockets nicely...
-  add High Score screen
   add mods: 
     - techno snake
     - invincible
