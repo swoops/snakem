@@ -25,6 +25,66 @@ void change_signal(){
     server_log(FATAL, "Could not change SIGPIPE singal");
 }
 
+void check_privs(){
+  uid_t rid, eid;
+
+  rid = getuid();
+  if ( getgid() == 0 )
+    rid = 0;
+
+  eid = geteuid();
+  if ( getegid() == 0 )
+    eid = 0;
+
+
+  if (rid != 0 && eid != 0)
+    return;
+
+  if ( rid == 0 && eid == 0 )
+    server_log(FATAL, "[check_privs] %s:%d: bad privs", __FILE__, __LINE__);
+
+  /* whoever is not root, be them */
+  if ( rid == 0 ){
+    if (setgid(eid) != 0)
+      server_log(FATAL, "[check_privs] %s:%d: failed to drop group privs", __FILE__, __LINE__);
+    if (setuid(eid) != 0)
+      server_log(FATAL, "[check_privs] %s:%d: failed to drop user privs", __FILE__, __LINE__);
+  }else{
+    if (setgid(rid) != 0)
+      server_log(FATAL, "[check_privs] %s:%d: failed to drop group privs", __FILE__, __LINE__);
+    if (setuid(rid) != 0)
+      server_log(FATAL, "[check_privs] %s:%d: failed to drop user privs", __FILE__, __LINE__);
+  }
+
+  if (setuid(0) != -1)
+    server_log(FATAL, "[check_privs] %s:%d: got root somehow...", __FILE__, __LINE__);
+}
+
+void make_daemon(){
+  pid_t pid = fork();
+
+  if ( pid < 0 )
+    server_log(FATAL, "[make_daemon] failed: ");
+
+  /* parent */
+  if ( pid > 0 ){
+    printf("PID: %d\n", pid);
+    exit(0);
+  }
+
+  /* child */
+  if ( setsid() < 0 )
+    server_log(FATAL, "[make_daemon] setsid() failed: ");
+
+  if ( chdir("/") != 0)
+    server_log(FATAL, "[make_daemon] chdir() failed: ");
+
+  close(STDIN_FILENO);
+  close(STDERR_FILENO);
+  close(STDOUT_FILENO);
+  
+}
+
 
 int main(int argc, char *argv[]){
   /* TODO: put this junk in a function in another file */
@@ -85,6 +145,10 @@ int main(int argc, char *argv[]){
   struct timeval tv;
   tv.tv_sec = 180; 
   tv.tv_usec = 0;  
+
+  check_privs();
+  if ( SERVER.log != stderr )
+    make_daemon();
 
   while(1) {
     /* if server is full don't go taking more connections... */
