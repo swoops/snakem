@@ -16,7 +16,6 @@ void player_unlock(player *p){
   if (p->flags & DEAD) server_log(ERROR, "unlocking a dead snake");
 
   pthread_mutex_unlock(&p->lock);
-
 }
 
 void player_lock(player *p){
@@ -25,7 +24,17 @@ void player_lock(player *p){
     pthread_mutex_unlock(&p->lock);
     destroy_player(p);
   } 
+}
 
+void player_set_timeout(player *p, time_t sec){
+  struct timeval tv;
+  tv.tv_usec = 0;  
+  tv.tv_sec = sec;
+
+  if (setsockopt(p->fd, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(struct timeval)) < 0)
+    server_log(FATAL, "%s:%d [player_set_timeout] SO_RCVTIMEO", __FILE__, __LINE__);
+  if (setsockopt(p->fd, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv, sizeof(struct timeval)) < 0)
+    server_log(FATAL, "%s:%d [player_set_timeout] SO_SNDTIMEO" , __FILE__, __LINE__);
 }
 
 char player_getc(player *p){

@@ -64,9 +64,24 @@ int set_params(char *buff, size_t buff_len, size_t line){
 		if ( (SERVER.t_inc = atoi(value)) <= 0 )
       return 1;
   }else if ( strncmp(key, "max_players",  key_len) == 0 ){
-		SERVER.max_players = atoi(value);
-		if ( (SERVER.max_players= atoi(value)) <= 0 )
+    /* this controls a size of a buffer, so be carefull */
+    int v = atoi(value);
+
+    if ( SERVER.max_players == v ) /* already done */
+      return 0;
+
+    /* new number, better make sure it is right */
+		if ( v <= 0 )
       server_log(FATAL, "%s:%d [set_params] invalid number of players" __FILE__, __LINE__);
+
+    SERVER.max_players = v;
+    /* new number of players so realloc */
+    SERVER.players = realloc(SERVER.players, sizeof(void *) * ( SERVER.max_players+1 ));
+    if ( SERVER.players == NULL ) 
+      server_log(FATAL, "%s:%d [set_params] realloc failed", __FILE__, __LINE__);
+    else
+      return 0;
+
   }else if ( strncmp(key, "log",          key_len) == 0 ){
     if ( SERVER.log != stderr ) {
       SERVER.log = stderr;
@@ -273,8 +288,7 @@ int parse_file(char *fname){
     if ( strncmp(buff, "list",4) == 0  ){
       iter_param_list(fp, skip_left_pad( buff+4), &line);
     }else  if ( set_params(buff, buff_len, line) != 0 ){
-      ret = -1;
-      break;
+      server_log(FATAL, "[parse_file] line %zu set_params return non zero value", line);
     }
   }
   fclose(fp);

@@ -6,6 +6,9 @@
 /* getch for a player socket */
 char player_getc(player *p);
 
+/*set the timeout in seconds on socket read*/
+void player_set_timeout(player *p, time_t sec);
+
 /* 
  * binary search for string needle in the list of illegal player names in the
  * SERVER.bnames.  Bad names original obtained from config file and should be

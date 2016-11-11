@@ -8,6 +8,9 @@ void serv_unlock();
 int serv_del_player(player *p);
 int serv_add_player(player *p);
 int serv_check_highscore(player *p);
+/* iterate through players marking them killed */
+
+void serv_wait_on_players();
 
 int serv_random_flags();
 void serv_set_flags(int flags);

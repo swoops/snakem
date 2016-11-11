@@ -69,6 +69,19 @@ void debug_player_array(char *msg){
     server_log(INFO,"\t p[%d]: %p", i, SERVER.players[i]);
 }
 
+/* this waits on all the player threads to die */
+void serv_wait_on_players(){
+  serv_lock();
+  server_log(DEBUG, "Waiting on players: %d", SERVER.last_player);
+  while ( SERVER.last_player >= 0){
+      serv_unlock();
+      sleep(1);
+      server_log(DEBUG, "sleeping 1 second");
+      serv_lock();
+  }
+  serv_unlock();
+}
+
 int serv_check_collisions(player *p, int head){
   int i;
   serv_lock();
@@ -86,7 +99,6 @@ int serv_check_collisions(player *p, int head){
           serv_notify_all(SERVER.players[i]->color, "%s killed himself", p->name );
         else
           serv_notify_all(SERVER.players[i]->color, "%s killed %s", SERVER.players[i]->name, p->name );
-
         return 1;
       }
     }

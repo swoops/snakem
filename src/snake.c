@@ -110,6 +110,9 @@ int snake_spectate(player *p){
   int mods;
   char msgbuff[140];
 
+  /* give a longer timeout for the socket */
+  player_set_timeout(p, 130);
+
   clear_screen(p);
   draw_board(p);
   serv_put_pellet(p);
@@ -194,6 +197,9 @@ int progress_game(player *p){
 
   p->flags &= ( (int) -1 ) ^ DEAD; 
 
+
+  /* slightly longer timeout */
+  player_set_timeout(p, 30);
   if ( pthread_create(&p->tid_controll, &ATTR, (void *) &snake_control, p) != 0 )
       server_log(FATAL, "Could not start control thread");
 

@@ -18,7 +18,7 @@
 
 /* for snake flags */
 #define DEAD         1    /* snake is dead, clean him off the road */
-#define KILL         2    /* snake is dead, clean him off the road */
+#define KILL         2    /* kill the snake*/
 #define BOT          4    /* this player is a bot trying to log in */
 #define SPECTATOR    8    /* This player is just here to watch */
 #define P_INVISIBO  16    /* Where did he go, this player is invisibo */
