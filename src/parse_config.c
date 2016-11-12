@@ -98,6 +98,8 @@ int set_params(char *buff, size_t buff_len, size_t line){
     if ( (SERVER.bot_warn = strdup(value) ) == NULL  )
       server_log(FATAL, "%s:%d [set_params] not enough memmory for banner file name", __FILE__, __LINE__);
   }else if ( strncmp(key, "hs_name",  key_len) == 0 ){
+    if ( SERVER.hs_name != NULL )
+      free(SERVER.hs_name);
     if ( (SERVER.hs_name = strdup(value) ) == NULL  )
       server_log(FATAL, "%s:%d [set_params] not enough memmory for hs_name", __FILE__, __LINE__);
   }else if ( strncmp(key, "spec_name",  key_len) == 0 ){

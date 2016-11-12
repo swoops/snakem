@@ -16,10 +16,13 @@ void player_set_timeout(player *p, time_t sec);
 */
 int player_bin_bad_name_check(char *needle);
 
+/* send a telnet "are you there" packet to ask for a response */
+void player_ayt(player *p);
+
 /* ask for and set name of snake */
 int player_set_name(player *p);
 
-/* mutex lock/unlock */
+/* mutex lock/unlock + check death */
 void player_unlock(player *p);
 void player_lock(player *p);
 

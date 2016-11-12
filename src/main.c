@@ -247,15 +247,6 @@ int main(int argc, char *argv[]){
   }
 
   close(sockfd);
-
-  /* wait on players to finish up */
-  if ( MY_SIG_CODE == SIG_CODE_SLOW )
-    serv_wait_on_players();
-
-  /*
-   * TODO: still a lot of SERVER stuff to free 
-  */
-
   /* 
    * TODO: destroy player has gotten messy, should be *lower* level function
    *       for this, I should not have to look up what needs free'd
@@ -264,11 +255,50 @@ int main(int argc, char *argv[]){
     free(play->pix);
     free(play);
   }
-  /* killall the players */
+
+  /* wait on players to finish up */
+  if ( MY_SIG_CODE == SIG_CODE_SLOW )
+    serv_wait_on_players();
+  /* kill all the players */
+  else if ( MY_SIG_CODE == SIG_CODE_KILL_ALL )
+    server_kill_em_all(1);
+
+  /* all players should be dead */
 
   pthread_attr_destroy(&ATTR);
+
+  /* clean up server stuff */
+  if ( SERVER.start_banner !=  NULL )
+    free(SERVER.start_banner);
+
+  if ( SERVER.bot_warn !=  NULL )
+    free(SERVER.bot_warn);
+
+  if ( SERVER.num_bnames > 0 ){
+    int i;
+    for (i=0; i<SERVER.num_bnames; i++){
+      free( SERVER.bnames[i] );
+    }
+    free(SERVER.bnames);
+  } 
+
+
+  if ( SERVER.spec_name !=  NULL )
+    free(SERVER.spec_name);
+  if ( SERVER.spec_pass !=  NULL )
+    free(SERVER.spec_pass);
+
+  if ( SERVER.hs_name !=  NULL )
+    free(SERVER.hs_name);
+
+  if ( SERVER.players !=  NULL )
+    free(SERVER.players);
+
+
   if ( SERVER.log != stderr )
     fclose(SERVER.log);
+
+  pthread_mutex_destroy(&SERVER.lock);
 
     
   return 0;

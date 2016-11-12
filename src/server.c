@@ -31,11 +31,11 @@ void init_server(){
   SERVER.num_bnames    =  0;
   SERVER.bnames        =  NULL;
 
-  SERVER.hs_name   = strdup("Nobody");
 
   SERVER.spec_name = NULL;
   SERVER.spec_pass = NULL;
 
+  SERVER.hs_name   = strdup("Nobody");
   if (SERVER.hs_name == NULL)
     server_log(FATAL, "%s [init_server]  line:%d ", __FILE__, __LINE__ );
 
@@ -57,7 +57,6 @@ void init_server(){
 void serv_lock(){
   pthread_mutex_lock(&SERVER.lock);
 }
-
 void serv_unlock(){
   pthread_mutex_unlock(&SERVER.lock);
 }
@@ -69,17 +68,35 @@ void debug_player_array(char *msg){
     server_log(INFO,"\t p[%d]: %p", i, SERVER.players[i]);
 }
 
-/* this waits on all the player threads to die */
-void serv_wait_on_players(){
+void server_kill_em_all(int wait){
+  int i;
+  serv_notify_all(0, "The server is trying to kick all players, run!!!");
   serv_lock();
-  server_log(DEBUG, "Waiting on players: %d", SERVER.last_player);
-  while ( SERVER.last_player >= 0){
-      serv_unlock();
-      sleep(1);
-      server_log(DEBUG, "sleeping 1 second");
-      serv_lock();
+  for (i=0; i<=SERVER.last_player; i++){
+    pthread_mutex_lock(&SERVER.players[i]->lock);
+    SERVER.players[i]->flags |= KILL; 
+
+    /* asks the player to say something, forcing a lock and thus a death check */
+    player_ayt(SERVER.players[i]);
+    pthread_mutex_unlock(&SERVER.players[i]->lock);
   }
   serv_unlock();
+
+  if ( wait ) {
+    serv_wait_on_players();
+    /* give time for the last 2 free()'s in destroy_player */
+    sleep(1); 
+  }
+}
+
+/* this waits on all the player threads to die */
+/* locking via serv_get_num_players */
+void serv_wait_on_players(){
+  server_log(DEBUG, "Waiting on players: %d", SERVER.last_player);
+  while ( serv_get_num_players() > 0){
+      server_log(DEBUG, "sleeping 1 second");
+      sleep(1);
+  }
 }
 
 int serv_check_collisions(player *p, int head){

@@ -60,9 +60,7 @@ char player_getc(player *p){
       }
 
       /* please respond */
-      player_write(p, 
-        "\xff\xfb\xf6" /* IAC WILL AYT*/
-      ); 
+      player_ayt(p);
 
       if ( read(p->fd, &resp, 3) < 0 )
         return 0x00; /* enough waiting */
@@ -85,6 +83,13 @@ char player_getc(player *p){
     return 0x00;
 }
 
+/* asks a telnet client to respond */
+void player_ayt(player *p){
+  player_write(p, 
+    "\xff\xfb\xf6" /* IAC WILL AYT*/
+  ); 
+}
+
 void destroy_player(player *p){
   /*
    * called twice, per snake to exit, once per each thread first call marks
@@ -98,11 +103,7 @@ void destroy_player(player *p){
     server_log(DEBUG, "part1 destroying player %p:%s", p,p->name);
     pthread_mutex_lock(&p->lock);
     p->flags |= DEAD;
-
-    /* get a response to kill controle thread if it is still there*/
-    player_write(p, 
-      "\xff\xfb\xf6" /* IAC WILL AYT*/
-    ); 
+    player_ayt(p);
 
     pthread_mutex_unlock(&p->lock);
     pthread_exit(0);
