@@ -50,22 +50,24 @@ void init_server(){
   SERVER.players[0] = NULL;
 
 }
+void serv_destory(){
+  /* free up all illegal names and the older for them */
+  if ( SERVER.num_bnames > 0 ){
+    int i;
+    for (i=0; i<SERVER.num_bnames; i++){
+      free( SERVER.bnames[i] );
+    }
+    free(SERVER.bnames);
+  } 
+  if ( SERVER.start_banner !=  NULL  ) free(SERVER.start_banner);
+  if ( SERVER.bot_warn     !=  NULL  ) free(SERVER.bot_warn);
+  if ( SERVER.spec_name    !=  NULL  ) free(SERVER.spec_name);
+  if ( SERVER.spec_pass    !=  NULL  ) free(SERVER.spec_pass);
+  if ( SERVER.hs_name      !=  NULL  ) free(SERVER.hs_name);
+  if ( SERVER.players      !=  NULL  ) free(SERVER.players);
+  if ( SERVER.log          != stderr ) fclose(SERVER.log);
 
-/* 
- * kinda silly but I expect I will be happy to have locks in one place later
-*/
-void serv_lock(){
-  pthread_mutex_lock(&SERVER.lock);
-}
-void serv_unlock(){
-  pthread_mutex_unlock(&SERVER.lock);
-}
-
-void debug_player_array(char *msg){
-  int i;
-  server_log(INFO, "%s total players: %d", msg, SERVER.last_player+1);
-  for (i=0; i<=SERVER.max_players; i++)
-    server_log(INFO,"\t p[%d]: %p", i, SERVER.players[i]);
+  pthread_mutex_destroy(&SERVER.lock);
 }
 
 void server_kill_em_all(int wait){
@@ -98,6 +100,26 @@ void serv_wait_on_players(){
       sleep(1);
   }
 }
+
+
+/* 
+ * kinda silly but I expect I will be happy to have locks in one place later
+*/
+void serv_lock(){
+  pthread_mutex_lock(&SERVER.lock);
+}
+void serv_unlock(){
+  pthread_mutex_unlock(&SERVER.lock);
+}
+
+#ifdef PLAYER_ARRAY_DBUG
+void debug_player_array(char *msg){
+  int i;
+  server_log(INFO, "%s total players: %d", msg, SERVER.last_player+1);
+  for (i=0; i<=SERVER.max_players; i++)
+    server_log(INFO,"\t p[%d]: %p", i, SERVER.players[i]);
+}
+#endif
 
 int serv_check_collisions(player *p, int head){
   int i;

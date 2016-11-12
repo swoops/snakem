@@ -266,41 +266,8 @@ int main(int argc, char *argv[]){
   /* all players should be dead */
 
   pthread_attr_destroy(&ATTR);
+  serv_destory();
 
-  /* clean up server stuff */
-  if ( SERVER.start_banner !=  NULL )
-    free(SERVER.start_banner);
-
-  if ( SERVER.bot_warn !=  NULL )
-    free(SERVER.bot_warn);
-
-  if ( SERVER.num_bnames > 0 ){
-    int i;
-    for (i=0; i<SERVER.num_bnames; i++){
-      free( SERVER.bnames[i] );
-    }
-    free(SERVER.bnames);
-  } 
-
-
-  if ( SERVER.spec_name !=  NULL )
-    free(SERVER.spec_name);
-  if ( SERVER.spec_pass !=  NULL )
-    free(SERVER.spec_pass);
-
-  if ( SERVER.hs_name !=  NULL )
-    free(SERVER.hs_name);
-
-  if ( SERVER.players !=  NULL )
-    free(SERVER.players);
-
-
-  if ( SERVER.log != stderr )
-    fclose(SERVER.log);
-
-  pthread_mutex_destroy(&SERVER.lock);
-
-    
   return 0;
 }
 #undef  SIG_CODE_KILL_ALL
