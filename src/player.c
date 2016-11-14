@@ -63,7 +63,8 @@ char player_getc(player *p){
       player_ayt(p);
 
       if ( read(p->fd, &resp, 3) < 0 )
-        return 0x00; /* enough waiting */
+        destroy_player(p);/* enough waiting */
+        /* return 0x00;  */
 
       /* did they answer politely? */
       if ( resp != 0xf6feff ){
@@ -71,7 +72,8 @@ char player_getc(player *p){
           __FILE__, __LINE__,
           (p->name != NULL) ? p->name : "", p, resp
         );
-        return 0x00;
+        destroy_player(p);
+        /* return 0x00; */
       }
     }
     server_log(ERROR, "%s:%d [player_getc] Player \"%s\":%p was hanging out far too long %zu iterations", 
@@ -80,6 +82,7 @@ char player_getc(player *p){
       i
     );
 
+    destroy_player(p);
     return 0x00;
 }
 
