@@ -62,35 +62,11 @@ static void set_signal(){
 }
 
 static void check_privs(){
-  uid_t rid, eid;
-
-  rid = getuid();
-  if ( getgid() == 0 )
-    rid = 0;
-
-  eid = geteuid();
-  if ( getegid() == 0 )
-    eid = 0;
-
-
-  if (rid != 0 && eid != 0)
-    return;
-
-  if ( rid == 0 && eid == 0 )
-    server_log(FATAL, "[check_privs] %s:%d: bad privs", __FILE__, __LINE__);
-
   /* whoever is not root, be them */
-  if ( rid == 0 ){
-    if (setgid(eid) != 0)
-      server_log(FATAL, "[check_privs] %s:%d: failed to drop group privs", __FILE__, __LINE__);
-    if (setuid(eid) != 0)
-      server_log(FATAL, "[check_privs] %s:%d: failed to drop user privs", __FILE__, __LINE__);
-  }else{
-    if (setgid(rid) != 0)
-      server_log(FATAL, "[check_privs] %s:%d: failed to drop group privs", __FILE__, __LINE__);
-    if (setuid(rid) != 0)
-      server_log(FATAL, "[check_privs] %s:%d: failed to drop user privs", __FILE__, __LINE__);
-  }
+  if (setgid(SERVER.uid) != 0)
+    server_log(FATAL, "[check_privs] %s:%d: failed to drop group privs", __FILE__, __LINE__);
+  if (setuid(SERVER.uid) != 0)
+    server_log(FATAL, "[check_privs] %s:%d: failed to drop user privs", __FILE__, __LINE__);
 
   umask(0);
 
@@ -127,7 +103,7 @@ static void make_daemon(){
 int main(int argc, char *argv[]){
   /* TODO: put this junk in a function in another file */
   init_server();
-  DEBUG_ENABLED = 0;
+  DEBUG_ENABLED = 1; /* start on, config will turn it off */
   MY_SIG_CODE=0;
 
   /*

@@ -19,6 +19,7 @@ void init_server(){
   SERVER.flags         =  0;
   SERVER.max_y         =  0;
   SERVER.max_x         =  0;
+  SERVER.uid           =  0;
   SERVER.port          =  4444;
   SERVER.high_score    =  0;
   SERVER.t_inc         =  1000;

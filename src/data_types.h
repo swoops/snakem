@@ -68,6 +68,7 @@ typedef struct {
 /* should be common to all players, global */
 typedef struct {
   int max_x, max_y;
+  uid_t uid;                    /* uid to drop permissions to */
   FILE *log;
   int t_inc;                    /* how much to increase the speed per pellot */
   int port;                     /* port to listen on */
