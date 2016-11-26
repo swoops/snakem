@@ -138,9 +138,9 @@ void destroy_player(player *p){
   
   pthread_mutex_destroy(&p->lock);
 
-  /* delete player from server list */
-  if ( serv_del_player(p) == -1 && serv_get_flags() & RANDOM_MODES  )
-    serv_set_flags( serv_get_flags() & ( ~ ALL_MODES  ) );
+  /* delete player from server list, clear random mods */
+  if ( serv_del_player(p) == -1 && serv_get_mods() & RANDOM_MODES  )
+    serv_clear_mods();
 
   if ( p->flags & BOT )
     server_log(INFO, "FILTHY STINKING BOT %p:%s destroyed", p, p->name);
@@ -327,6 +327,9 @@ void player_is_a_bot(player *p){
       inet_ntoa(p->addr.sin_addr), ntohs(p->addr.sin_port), p->name);
     destroy_player(p);
   }
+
+  serv_random_mods(p->name, 10);
+
   serv_notify_all(88, "Silly bot: %s:%d tried to login as (%s:%s)", 
     inet_ntoa(p->addr.sin_addr), ntohs(p->addr.sin_port), p->name, pass);
 

@@ -27,7 +27,7 @@
 #define TRASH_MODE       8
 #define RANDOM_MODES    16
 #define S_INVISIBO      32    /* players can be invisibo */
-#define ALL_MODES ( ANON_MODE | TRASH_MODE )
+#define ALL_MODES ( ANON_MODE | TRASH_MODE | S_INVISIBO)
 
 /* largets player name */
 #define MAX_PLAYER_NAME 16 
@@ -79,13 +79,17 @@ typedef struct {
   struct sockaddr_in * addr;
   char * start_banner;
   char * bot_warn;
-  int flags;
+
+  int mods;                     /* mods set by config */
+  int rand_mods;                /* mods that are set/unset by random mods */ 
+                                /* assert mods & rand_mods == mods         */
+
   player ** players;            /* array of players NULL terminated */
   int max_players;              /* max number of players */
   int last_player;              /* index of last player */
   pthread_mutex_t lock;         /* lock for threading */
   char * hs_name;               /* name of player with high score */
-  size_t num_bnames;                  /* number of bad player names */
+  size_t num_bnames;            /* number of bad player names */
   char **bnames;
 
 } server;

@@ -16,7 +16,8 @@
 
 void init_server(){
   /* TODO: init from config file */
-  SERVER.flags         =  0;
+  SERVER.mods          =  0;
+  SERVER.rand_mods     =  0;
   SERVER.max_y         =  0;
   SERVER.max_x         =  0;
   SERVER.uid           =  0;
@@ -270,22 +271,47 @@ void serv_put_pellet(player *p){
   place_str( pellet.x, pellet.y, p, "\e[38;5;0;48;5;46m*\e[0m");
 }
 
-int serv_random_flags(){
+void serv_random_mods(char *name, int chance){
+  if ( name && ( random() % chance ) != 0 ) return;
+
+  server_log(DEBUG, "serv_random_mods( %s, %d )",
+    (name) ? name : "NULL",
+    chance
+  );
+
   serv_lock();
-  int i =  ( ( random() & ALL_MODES )  | RANDOM_MODES ) ;
-  server_log(INFO, "[serv_random_flags] flags set %s%s%s", 
+  int i = SERVER.rand_mods;
+
+  /* is randome enabled? */
+
+  if ( ( SERVER.mods & RANDOM_MODES ) == 0 ){
+    serv_unlock();
+    return;
+  }
+  SERVER.rand_mods =  ( ( random() & ALL_MODES )  | SERVER.mods ) ;
+  serv_unlock();
+
+  server_log(INFO, "[serv_random_mods] flags set %s%s%s%s by %s", 
+    (S_INVISIBO & i)    ?  "INVISIBO "      : "",
     (TRASH_MODE & i)    ?  "TRASH_MODE "    : "",
     (ANON_MODE & i)     ?  "ANON_MODE "     : "",
-    (RANDOM_MODES & i)  ?  "RANDOM_MODES "  : ""
+    (RANDOM_MODES & i)  ?  "RANDOM_MODES "  : "",
+    (name)              ? name : "watcher"
   );
-  SERVER.flags = i;
-  serv_unlock();
-  return i;
+
+  /* must be unlocked before calling notify or deadlock will ensue */
+  if ( SERVER.rand_mods != i )
+    serv_notify_all(0, "MODS %s%s%s enabled, THANKS %s!", 
+      (S_INVISIBO & i) ?  "INVISIBO "      : "",
+      (TRASH_MODE & i) ?  "TRASH "  : "",
+      (ANON_MODE & i)  ?  "ANON  "  : "",
+      (name)           ?  name      : "watcher"
+    );
 }
 
-void serv_set_flags(int flags){
+void serv_clear_mods(){
   serv_lock();
-  SERVER.flags = flags;
+  SERVER.rand_mods = SERVER.mods;
   serv_unlock();
 }
 
@@ -343,10 +369,10 @@ int serv_get_highscore(){
 
   return ret;
 }
-int serv_get_flags(){
+int serv_get_mods(){
   int ret;
   serv_lock();
-  ret = SERVER.flags;
+  ret = SERVER.rand_mods;
   serv_unlock();
   return ret;
 }

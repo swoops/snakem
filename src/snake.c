@@ -107,7 +107,6 @@ int snake_control(player *p){
  */ 
 int snake_spectate(player *p){
   char ch;
-  int mods;
   char msgbuff[140];
 
   /* give a longer timeout for the socket */
@@ -138,15 +137,7 @@ int snake_spectate(player *p){
           p->flags &= ( (int) -1 ) ^ DEAD; 
           break;
         case 'r':
-          if ( serv_get_flags() & RANDOM_MODES ){
-            mods = serv_random_flags(); 
-            if ( mods & ( ANON_MODE | TRASH_MODE ) ){
-              serv_notify_all(88, "MODS %s%s enabled by the watcher",
-                    (TRASH_MODE & mods) ?  "TRASH "  : "",
-                    (ANON_MODE & mods)  ?  "ANON  "  : ""
-              );
-            }
-          }
+          serv_random_mods(NULL, 1); 
           break;
         case 0x00:
           server_log(DEBUG, "spectator is gone");
@@ -171,8 +162,8 @@ int progress_game(player *p){
   if ( p->flags & SPECTATOR )
     snake_spectate(p);
 
-  if ( serv_get_flags() & RANDOM_MODES &&  serv_get_flags() & ALL_MODES  ){
-      serv_set_flags( serv_get_flags() & ( ~ ALL_MODES  ) );
+  if ( ( serv_get_mods() & (RANDOM_MODES|ALL_MODES) ) == (RANDOM_MODES|ALL_MODES)   ){
+      serv_clear_mods();
       serv_notify_all(p->color, "SHHhhh!!! %s is joining, no more fun", p->name);
   }else{
       serv_notify_all(p->color, "%s Joined\e[00m", p->name);
@@ -188,6 +179,7 @@ int progress_game(player *p){
   draw_snake(p);
   serv_put_pellet(p);
   show_score(p);
+  player_set_timeout(p, 30);
 
 
   /*
@@ -196,10 +188,6 @@ int progress_game(player *p){
   */
 
   p->flags &= ( (int) -1 ) ^ DEAD; 
-
-
-  /* slightly longer timeout */
-  player_set_timeout(p, 30);
   if ( pthread_create(&p->tid_controll, &ATTR, (void *) &snake_control, p) != 0 )
       server_log(FATAL, "Could not start control thread");
 
@@ -271,6 +259,7 @@ void move_snake(player *p){
     destroy_player(p);
   }
 
+  int serv_mods = serv_get_mods();
 
   /*
    * check pellet before "expensive" check of hitting itself
@@ -287,7 +276,7 @@ void move_snake(player *p){
      * disapear 
      */
     if ( p->pix[taili] != serv_get_pellet()){
-      if ( serv_get_flags() & TRASH_MODE )
+      if ( serv_get_mods() & TRASH_MODE )
         place_str( ptail.x, ptail.y, NULL,  "%c", p->name[head_num % p->nlen]);
       else
         place_str( ptail.x, ptail.y, NULL,  " ");
@@ -295,37 +284,28 @@ void move_snake(player *p){
 
   }else{ /* snake ate a pellet */
     grow_snake(p);
-    int serv_mods = serv_get_flags();
+    /* mod proc ? */
     if ( serv_mods ){
-      if ( p->flags & P_INVISIBO ){
-        if ( random() % 50 == 0 ){
+      if ( p->flags & P_INVISIBO ){ 
+        if ( random() % 10 == 0 ){ /* if invisibo 1/10 remove */
           p->flags ^= P_INVISIBO;
           serv_notify_all(p->color, "%s is no longer INVISIBO!!!", p->name);
         }
-      } else if ( random() % 150 == 0 ){
+      } else if ( random() % 150 == 0 ){ /* not invisibo, should we be? */
           p->flags |= P_INVISIBO;
           serv_notify_all(p->color, "%s is INVISIBO!!!", p->name);
-        }
-
-      if ( random() % 100 == 0 && serv_mods & RANDOM_MODES ){
-        int mods = serv_random_flags();
-        if ( mods & ( ANON_MODE | TRASH_MODE ) ){
-          serv_notify_all(p->color, "MODS %s%s enabled, THANKS %s!", 
-                (TRASH_MODE & mods) ?  "TRASH "  : "",
-                (ANON_MODE & mods)  ?  "ANON  "  : "",
-                p->name
-          );
-        }
       }
+
+      serv_random_mods(p->name, 50);
     }
     serv_put_pellet(NULL);
 
     taili = p->head-1;
     if ( taili < 0 ) taili = taili + p->slen;
-  }
+  }/* end snake pellet */
 
   /* put head down */
-  if (SERVER.flags & ANON_MODE)
+  if (serv_mods & ANON_MODE)
     place_str(phead.x, phead.y, ( p->flags & P_INVISIBO ) ? p : NULL, "\e[48;5;%dm \e[0m", 10);
   else
     place_str(phead.x, phead.y, ( p->flags & P_INVISIBO ) ? p : NULL, "\e[48;5;%dm%c\e[0m", p->color, p->name[head_num % p->nlen]);

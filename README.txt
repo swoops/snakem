@@ -8,10 +8,10 @@ snakem
   run make to compile
 
   to open a telnet server:
-    $ ./snakem [<config file>]
+    $ ./snakem 
 
   to play:
-  	$ telnet 127.0.0.1 4444
+  	$ telnet <ip> [port]
 
    see the default.conf file for more information
 

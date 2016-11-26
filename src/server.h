@@ -32,7 +32,7 @@ int serv_check_collisions(player *p, int head);
 
 /*
  * tell everyone something:
- * color: the color code to use for the font forground color
+ * color: the color code to use for the font foreground color
  */
 void serv_notify_all(int color, char *fmt, ...);
 
@@ -44,7 +44,7 @@ void serv_put_pellet(player *p);
  * like write(fp, buff, strlen(buff)) but for all the players in SERVER.players
  * that are not dead
  * 
- * it is used by serv_notify_all to do the writting
+ * it is used by serv_notify_all to do the writing
  */
 void serv_write(char *buff);
 
@@ -56,14 +56,17 @@ int serv_del_player(player *p);
 int serv_add_player(player *p);
 int serv_check_highscore(player *p);
 
+/*
+ * set mods to randomness and notifies to all players name should be blamed
+ * has a 1/chance probability of changing the flags
+*/
+void serv_random_mods(char *name, int chance);
 
-
-
-int serv_random_flags();
-void serv_set_flags(int flags);
+/* clears all modes that were not set in config */
+void serv_clear_mods();
 
 /* server gets */
 int serv_get_highscore();
-int serv_get_flags();
+int serv_get_mods();
 int serv_get_num_players();
 int serv_get_pellet();

@@ -5,7 +5,7 @@
 #include <errno.h>
 #include <string.h>
 #include  "parse_config.h"
-#include  "static_parse_config.h"
+#include  "static_h/static_parse_config.h"
 #include  "logging.h"
 #include  "data_types.h"
 
@@ -116,7 +116,7 @@ static int set_params(char *buff, size_t buff_len, size_t line){
   }else if ( strcmp(key, "high_score") == 0 ){
 		SERVER.high_score = atoi(value);
   }else if ( strcmp(key, "game_mods") == 0 ){
-		SERVER.flags = atoi(value);
+		SERVER.rand_mods = SERVER.mods = atoi(value);
   }else if ( strcmp(key, "t_inc") == 0 ){
 		if ( (SERVER.t_inc = atoi(value)) <= 0 )
       return 1;
