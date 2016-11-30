@@ -136,11 +136,12 @@ void destroy_player(player *p){
   if ( p->name == NULL ) 
     server_log(FATAL, "%s line %d p->name == NULL", __FILE__, __LINE__);
   
-  pthread_mutex_destroy(&p->lock);
-
   /* delete player from server list, clear random mods */
   if ( serv_del_player(p) == -1 && serv_get_mods() & RANDOM_MODES  )
     serv_clear_mods();
+
+  /* player must be removed from server before removing his mutex */
+  pthread_mutex_destroy(&p->lock);
 
   if ( p->flags & BOT )
     server_log(INFO, "FILTHY STINKING BOT %p:%s destroyed", p, p->name);
